@@ -119,7 +119,8 @@ def run_test(test: tests.TestCase) -> TestResult:
 
     if test.expected_print is not None and test.expected_print != program_result:
         log(f"[FAIL] {test.name}", InputColor.ERROR)
-        log(f"       Expected output: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})", InputColor.WARNING)
+        log(f"       Expected output: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
+            InputColor.WARNING)
         log(f"       Received output: {shorten(repr(program_result))} (len={len(program_result)})", InputColor.WARNING)
         return TestResult.FAIL
 
