@@ -5,7 +5,7 @@ from enum import Enum
 from unittest.mock import patch
 import io
 import contextlib
-from typing import Callable, Any
+from typing import Any
 from dataclasses import dataclass, field
 import sys
 import time
@@ -18,7 +18,7 @@ class TimeoutException(BaseException):
 @dataclass
 class TestCase:
     name: str
-    func: Callable[..., Any]
+    func: str
     inputs: list[str] = field(default_factory=list)
     expected_print: str | None = None
     expected_return: Any = None
@@ -84,6 +84,7 @@ def log(text: str, color: InputColor = InputColor.BASE) -> None:
 
 # --- MODULAR TEST RUNNER START ---
 def run_test(test: TestCase) -> TestResult:
+    import assignment
     safe_args = test.args or ()
     safe_kwargs = test.kwargs or {}
 
@@ -92,6 +93,11 @@ def run_test(test: TestCase) -> TestResult:
 
     timeout_seconds = test.timeout
     start_time = time.time()
+    target_func = getattr(assignment, test.func, None)
+    if target_func is None:
+        log(f"[FAIL] {test.name}", InputColor.ERROR)
+        log(f"       No method called '{test.func}'", InputColor.WARNING)
+        return TestResult.ERROR
 
     def tracer(frame, event, arg):
         if time.time() - start_time > timeout_seconds:
@@ -103,7 +109,7 @@ def run_test(test: TestCase) -> TestResult:
             with patch('builtins.input', side_effect=test.inputs):
                 sys.settrace(tracer)
                 try:
-                    actual_return = test.func(*safe_args, **safe_kwargs)
+                    actual_return = target_func(*safe_args, **safe_kwargs)
                 finally:
                     sys.settrace(None)
     except TimeoutException:
@@ -137,6 +143,7 @@ def run_tests():
     log(f"--- TESTS RUNNING: {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')} ---")
     global_start_time = time.time()
 
+    # --- PREREQUISITES START ---
     log("[INFO] Checking prerequisites...", InputColor.INFO)
     prerequisites_passed: bool = True
     file: str = "assignment.py"
@@ -146,22 +153,36 @@ def run_tests():
     if not prerequisite_noglobals(file):
         log(f"[FAIL] File '{file}' uses global variables.", InputColor.ERROR)
         prerequisites_passed = False
+
+    try:
+        output_on_import: io.StringIO = io.StringIO()
+        clean_import = True
+        with contextlib.redirect_stdout(output_on_import):
+            import assignment  # noqa: F401 # type: ignore
+            output_on_import_str = output_on_import.getvalue()
+            if output_on_import_str:
+                clean_import = False
+        if not clean_import:
+            log("[FAIL] Side effect on import (print)", InputColor.ERROR)
+            log(f"       {shorten(output_on_import_str.strip())}", InputColor.WARNING)
+            prerequisites_passed = False
+    except Exception as e:
+        log(f"[FAIL] Critical error on loading: {e}", InputColor.ERROR)
+        # log("[WARN] Address this issue to your teacher.", InputColor.WARNING)
+        prerequisites_passed = False
+
     if not prerequisites_passed:
         log("[FAIL] Prerequisites", InputColor.ERROR)
         return
     log("[PASS] Prerequisites", InputColor.SUCCESS)
-
-    try:
-        import assignment  # noqa # type: ignore
-    except Exception as e:
-        log(f"[FAIL] Could not load 'assignment.py': {e}", InputColor.ERROR)
-        log("[WARN] Address this issue to your teacher.", InputColor.WARNING)
-        return
+    # --- PREREQUISITES END ---
 
     log("\n[INFO] Running tests...", InputColor.INFO)
 
     # --- TEST DEFINITIONS START ---
-    test_cases: list[TestCase] = []
+    test_cases: list[TestCase] = [
+        TestCase(name="Print 'Hello'", func="hello", expected_print="Hello\n")
+    ]
     # --- TEST DEFINITIONS END ---
 
     tests_total: int = len(test_cases)
