@@ -103,7 +103,10 @@ def run_test(test: tests.TestCase) -> TestResult:
             with patch('builtins.input', side_effect=test.inputs):
                 sys.settrace(tracer)
                 try:
-                    actual_return = target_func(*safe_args, **safe_kwargs)
+                    if test.iterations > 1:
+                        actual_return = [target_func(*safe_args, **safe_kwargs) for _ in range(test.iterations)]
+                    else:
+                        actual_return = target_func(*safe_args, **safe_kwargs)
                 finally:
                     sys.settrace(None)
     except TimeoutException:
@@ -119,15 +122,22 @@ def run_test(test: tests.TestCase) -> TestResult:
 
     if test.expected_print is not None and test.expected_print != program_result:
         log(f"[FAIL] {test.name}", InputColor.ERROR)
-        log(f"       Expected output: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})", InputColor.WARNING)
+        log(f"       Expected output: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
+            InputColor.WARNING)
         log(f"       Received output: {shorten(repr(program_result))} (len={len(program_result)})", InputColor.WARNING)
         return TestResult.FAIL
 
-    if test.expected_return is not None and test.expected_return != actual_return:
-        log(f"[FAIL] {test.name}", InputColor.ERROR)
-        log(f"       Expected return: {shorten(repr(test.expected_return))}", InputColor.WARNING)
-        log(f"       Received return: {shorten(repr(actual_return))}", InputColor.WARNING)
-        return TestResult.FAIL
+    if test.expected_return is not None:
+        if callable(test.expected_return):
+            if not test.expected_return(actual_return):
+                log(f"[FAIL] {test.name}", InputColor.ERROR)
+                log(f"       Unexpected return value: {shorten(repr(actual_return))}", InputColor.WARNING)
+                return TestResult.FAIL
+        elif test.expected_return != actual_return:
+            log(f"[FAIL] {test.name}", InputColor.ERROR)
+            log(f"       Expected return: {shorten(repr(test.expected_return))}", InputColor.WARNING)
+            log(f"       Received return: {shorten(repr(actual_return))}", InputColor.WARNING)
+            return TestResult.FAIL
 
     log(f"[PASS] {test.name}", InputColor.SUCCESS)
     return TestResult.SUCCESS
