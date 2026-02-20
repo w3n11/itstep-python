@@ -245,12 +245,19 @@ def run_tests():
         log(f"[WARN] {tests_skipped} tests skipped.", InputColor.WARNING)
     print()
 
-    if tests_total == tests_passed:
+    if tests_total == tests_passed and tests_total > 0:
         test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
         if len(test_cases_bonus) > 0:
+            log("═" * 45 + "\n", InputColor.INFO)
             log("\n[INFO] Running bonus tests...", InputColor.INFO)
+            bonus_success: bool = True
             for case in test_cases_bonus:
-                run_test(case)
+                if run_test(case) != TestResult.SUCCESS:
+                    bonus_success = False
+            print()
+            if bonus_success:
+                log("[PASS] Well done. Your code is perfect.\n", InputColor.SUCCESS)
+            log("═" * 45, InputColor.INFO)
 
 
 if __name__ == "__main__":
