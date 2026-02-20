@@ -248,6 +248,7 @@ def run_tests():
     if tests_total == tests_passed:
         test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
         if len(test_cases_bonus) > 0:
+            log("\n[INFO] Running bonus tests...", InputColor.INFO)
             for case in test_cases_bonus:
                 run_test(case)
 
