@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Any
 import random
 from typing import Any, Callable
 
@@ -95,6 +94,18 @@ def generate() -> list[TestCase]:
     result.append(
         TestCase(
             name="is_prime(-1) edge case", func="is_prime", expected_return=False, args=(-1,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="dice_roll()",
+            func="dice_roll",
+            iterations=20,
+            expected_return=lambda results: (
+                all(isinstance(x, int) and 1 <= x <= 6 for x in results)
+                and len(set(results)) > 1
+            )
         )
     )
 

@@ -37,8 +37,19 @@ Testy se Vám ani nespustí, pokud:
 ### Vstup/Výstup
 Implementujte funkci `hello_input()`, která načte ze vstupu jméno a následně vypíše `Hello <jméno>!`. Pokud je vstup prázdný, vypíše `Hello everyone!`.
 
+`input` `print` `==`
+
 ### Ověření věku
 Implementujte funkci `age_verification(limit)`, která načte ze vstupu číslo a vrátí `True`, pokud je načtená hodnota větší nebo rovna `limit`. `False` jinak.
 
+`<` `>` `return` `int`
+
+### Hod kostkou
+Implementujte funkci `dice_roll()`, která vrátí náhodné celé číslo v intervalu <1, 6>.
+
+`import`
+
 ### Detekce prvočísla
 Implementujte funkci `is_prime(number)`, která vrátí `True`, pokud je `number` prvočíslo. `False` jinak. Zamyslete se, jak by tento algoritmus bylo možné optimalizovat.
+
+`%` `for` `while` `range`
