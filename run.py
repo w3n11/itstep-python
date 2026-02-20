@@ -63,6 +63,12 @@ def prerequisite_noglobals(file: str) -> bool:
     return True
 
 
+def divider(text: str = "", length: int = 45):
+    if text == "":
+        return "═" * length
+    return f" {text} ".center(length, "═")
+
+
 def colored(color: tuple[int, int, int], text: str) -> str:
     return f"\033[38;2;{color[0]};{color[1]};{color[2]}m{text}\033[0m"
 
@@ -128,7 +134,7 @@ def run_test(test: tests.TestCase) -> TestResult:
 
 
 def run_tests():
-    log(f"--- TESTS RUNNING: {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')} ---")
+    log(divider(f"TEST RUN {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}") + "\n", InputColor.INFO)
     global_start_time = time.time()
 
     # --- PREREQUISITES START ---
@@ -173,6 +179,7 @@ def run_tests():
 
     if not prerequisites_passed:
         log("[FAIL] Prerequisites not met.", InputColor.ERROR)
+        log("\n" + divider(), InputColor.INFO)
         return
     log("[PASS] Prerequisites met.", InputColor.SUCCESS)
     # --- PREREQUISITES END ---
@@ -217,9 +224,7 @@ def run_tests():
     filled = int(bar_length * tests_passed / tests_total) if tests_total > 0 else 0
     bar = "█" * filled + "░" * (bar_length - filled)
 
-    log("\n" + "═" * 45, InputColor.INFO)
-    log(" 📊 TEST SUMMARY", InputColor.INFO)
-    log("═" * 45, InputColor.INFO)
+    log("\n" + divider("📊 TEST SUMMARY") + "\n", InputColor.INFO)
 
     log(f" Time Elapsed:    {elapsed_time:.2f}s", InputColor.BASE)
     log(f" Total Tests:     {tests_total}\n", InputColor.BASE)
@@ -229,12 +234,12 @@ def run_tests():
     log(f" Exceptions: {tests_error}", InputColor.ERROR if tests_error > 0 else InputColor.SUCCESS)
     log(f" Skipped:    {tests_skipped}", InputColor.WARNING if tests_skipped > 0 else InputColor.SUCCESS)
 
-    log("─" * 45, InputColor.INFO)
+    print()
 
     bar_color = InputColor.SUCCESS if percentage == 100 else InputColor.WARNING
-    print(colored(InputColor.INFO.value, " Progress: ") + colored(bar_color.value, f"{bar} {percentage}%"))
+    print(colored(InputColor.BASE.value, " Progress: ") + colored(bar_color.value, f"{bar} {percentage}%"))
 
-    log("═" * 45, InputColor.INFO)
+    log("\n" + divider(), InputColor.INFO)
 
     print()
     if tests_total == tests_passed:
@@ -248,16 +253,15 @@ def run_tests():
     if tests_total == tests_passed and tests_total > 0:
         test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
         if len(test_cases_bonus) > 0:
-            log("═" * 45 + "\n", InputColor.INFO)
-            log("\n[INFO] Running bonus tests...", InputColor.INFO)
+            log(divider("BONUS TESTS") + "\n", InputColor.INFO)
             bonus_success: bool = True
             for case in test_cases_bonus:
                 if run_test(case) != TestResult.SUCCESS:
                     bonus_success = False
             print()
             if bonus_success:
-                log("[PASS] Well done. Your code is perfect.\n", InputColor.SUCCESS)
-            log("═" * 45, InputColor.INFO)
+                log("[PASS] WELL DONE. YOUR CODE IS PERFECT.\n", InputColor.SUCCESS)
+    log("═" * 45, InputColor.INFO)
 
 
 if __name__ == "__main__":
