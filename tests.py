@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 import random
+from typing import Any, Callable
 
 
 @dataclass
@@ -9,10 +10,11 @@ class TestCase:
     func: str
     inputs: list[str] = field(default_factory=list)
     expected_print: str | None = None
-    expected_return: Any = None
+    expected_return: Any | Callable[[Any], bool] = None
     args: tuple = ()
     kwargs: dict | None = None
     timeout: float = 2.0
+    iterations: int = 1
 
 
 def generate() -> list[TestCase]:
