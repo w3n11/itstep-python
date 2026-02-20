@@ -95,6 +95,12 @@ def generate() -> list[TestCase]:
             name="is_prime(-1) edge case", func="is_prime", expected_return=False, args=(-1,)
         )
     )
+
+    return result
+
+
+def generate_bonus() -> list[TestCase]:
+    result: list[TestCase] = []
     large_prime = 3400470137
     result.append(
         TestCase(
@@ -104,10 +110,4 @@ def generate() -> list[TestCase]:
             args=(large_prime,)
         )
     )
-
-    return result
-
-
-def generate_bonus() -> list[TestCase]:
-    result: list[TestCase] = []
     return result
