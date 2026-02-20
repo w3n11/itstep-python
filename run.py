@@ -209,6 +209,7 @@ def run_tests():
             tests_skipped += 1
             not_implemented.append(case.func)
 
+    # --- RESULTS ---
     elapsed_time = time.time() - global_start_time
     percentage = int((tests_passed / tests_total) * 100) if tests_total > 0 else 0
 
@@ -243,6 +244,12 @@ def run_tests():
     if tests_skipped > 0:
         log(f"[WARN] {tests_skipped} tests skipped.", InputColor.WARNING)
     print()
+
+    if tests_total == tests_passed:
+        test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
+        if len(test_cases_bonus) > 0:
+            for case in test_cases_bonus:
+                run_test(case)
 
 
 if __name__ == "__main__":

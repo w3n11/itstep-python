@@ -17,3 +17,8 @@ class TestCase:
 def generate() -> list[TestCase]:
     result: list[TestCase] = []
     return result
+
+
+def generate_bonus() -> list[TestCase]:
+    result: list[TestCase] = []
+    return result
