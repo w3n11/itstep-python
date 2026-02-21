@@ -21,21 +21,79 @@ def generate() -> list[TestCase]:
 
     result.append(
         TestCase(
-            name="is_adult() < '15'",
-            func="is_adult",
-            inputs=["15"],
+            name="hello() < \"John\"",
+            func="hello",
+            inputs=["John"],
+            expected_print="Hello John!\n"
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="hello() < \"Jane\"",
+            func="hello",
+            inputs=["Jane"],
+            expected_print="Hello Jane!\n"
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="hello() < \"World\"",
+            func="hello",
+            inputs=["World"],
+            expected_print="Hello World!\n"
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="hello() < \"\"",
+            func="hello",
+            inputs=[""],
+            expected_print="Hello everyone!\n"
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="age_verification(21) < \"18\"",
+            func="age_verification",
+            inputs=["18"],
             expected_return=False
         )
     )
 
     result.append(
         TestCase(
-            name="is_adult() < '18'",
-            func="is_adult",
-            inputs=["18"],
+            name="age_verification(21) < \"21\"",
+            func="age_verification",
+            inputs=["21"],
             expected_return=True
         )
     )
+
+    result.append(
+        TestCase(
+            name="age_verification(21) < \"35\"",
+            func="age_verification",
+            inputs=["35"],
+            expected_return=True
+        )
+    )
+
+    random_test_amount: int = 7
+    for i in range(random_test_amount):
+        a = random.randint(1, 100)
+        b = random.randint(1, 100)
+        result.append(
+            TestCase(
+                name=f"age_verification({a}) < \"{b}\" (random)",
+                func="age_verification",
+                inputs=[str(b)],
+                expected_return=b >= a
+            )
+        )
 
     result.append(
         TestCase(
@@ -74,7 +132,7 @@ def generate() -> list[TestCase]:
     for i in range(random_test_amount):
         result.append(
             TestCase(
-                name=f"is_prime({candidates[i]}) random",
+                name=f"is_prime({candidates[i]}) (random)",
                 func="is_prime",
                 expected_return=candidates[i] in PRIMES,
                 args=(candidates[i],)
@@ -83,17 +141,17 @@ def generate() -> list[TestCase]:
 
     result.append(
         TestCase(
-            name="is_prime(0) edge case", func="is_prime", expected_return=False, args=(0,)
+            name="is_prime(0) (edge case)", func="is_prime", expected_return=False, args=(0,)
         )
     )
     result.append(
         TestCase(
-            name="is_prime(1) edge case", func="is_prime", expected_return=False, args=(1,)
+            name="is_prime(1) (edge case)", func="is_prime", expected_return=False, args=(1,)
         )
     )
     result.append(
         TestCase(
-            name="is_prime(-1) edge case", func="is_prime", expected_return=False, args=(-1,)
+            name="is_prime(-1) (edge case)", func="is_prime", expected_return=False, args=(-1,)
         )
     )
 
