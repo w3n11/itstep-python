@@ -228,7 +228,8 @@ def run_tests():
         if not prerequisite_noglobals(file):
             log("[FAIL] The assignment uses global variables.", InputColor.ERROR)
             prerequisites_passed = False
-        only_allowed_modules, bad_module = prerequisite_forbidden_modules(file):
+        only_allowed_modules, bad_module = prerequisite_forbidden_modules(file)
+        if not only_allowed_modules:
             log(f"[FAIL] The assignment uses a forbidden module: {bad_module}", InputColor.ERROR)
             prerequisites_passed = False
         if not prerequisite_mypy(file):
