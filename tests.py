@@ -13,6 +13,7 @@ class TestCase:
     kwargs: dict | None = None
     timeout: float = 2.0
     iterations: int = 1
+    expected_exception: type[Exception] | None = None
 
 
 def generate() -> list[TestCase]:

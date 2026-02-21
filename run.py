@@ -98,6 +98,7 @@ def run_test(test: tests.TestCase) -> TestResult:
             raise TimeoutException()
         return tracer
 
+    caught_exception: Exception | None = None
     try:
         with contextlib.redirect_stdout(program_output):
             with patch('builtins.input', side_effect=test.inputs):
@@ -114,29 +115,46 @@ def run_test(test: tests.TestCase) -> TestResult:
         log(f"       The program has exceeded the {timeout_seconds} second time limit.", InputColor.WARNING)
         return TestResult.FAIL
     except Exception as e:
+        caught_exception = e
+
+    if test.expected_exception is not None:
+        if caught_exception is None:
+            log(f"[FAIL] {test.name} (Expected exception)", InputColor.ERROR)
+            log(f"       Expected: {test.expected_exception.__name__}", InputColor.WARNING)
+            log(f"       But your code returned {actual_return}", InputColor.WARNING)
+            return TestResult.FAIL
+        elif not isinstance(caught_exception, test.expected_exception):
+            log(f"[FAIL] {test.name} (Invalid exception)", InputColor.ERROR)
+            log(f"       Expected: {test.expected_exception.__name__}", InputColor.WARNING)
+            log(f"       Received: {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
+            return TestResult.ERROR
+        else:
+            log(f"[PASS] {test.name}", InputColor.SUCCESS)
+            return TestResult.SUCCESS
+    if caught_exception is not None:
         log(f"[FAIL] {test.name} (Exception)", InputColor.ERROR)
-        log(f"       {type(e).__name__}: {e}", InputColor.WARNING)
+        log(f"       {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
         return TestResult.ERROR
 
     program_result = program_output.getvalue()
 
     if test.expected_print is not None and test.expected_print != program_result:
-        log(f"[FAIL] {test.name}", InputColor.ERROR)
-        log(f"       Expected output: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
+        log(f"[FAIL] {test.name} (Invalid output)", InputColor.ERROR)
+        log(f"       Expected: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
             InputColor.WARNING)
-        log(f"       Received output: {shorten(repr(program_result))} (len={len(program_result)})", InputColor.WARNING)
+        log(f"       Received: {shorten(repr(program_result))} (len={len(program_result)})", InputColor.WARNING)
         return TestResult.FAIL
 
     if test.expected_return is not None:
         if callable(test.expected_return):
             if not test.expected_return(actual_return):
-                log(f"[FAIL] {test.name}", InputColor.ERROR)
-                log(f"       Unexpected return value: {shorten(repr(actual_return))}", InputColor.WARNING)
+                log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
+                log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
                 return TestResult.FAIL
         elif test.expected_return != actual_return:
-            log(f"[FAIL] {test.name}", InputColor.ERROR)
-            log(f"       Expected return: {shorten(repr(test.expected_return))}", InputColor.WARNING)
-            log(f"       Received return: {shorten(repr(actual_return))}", InputColor.WARNING)
+            log(f"[FAIL] {test.name} (Invalid return)", InputColor.ERROR)
+            log(f"       Expected: {shorten(repr(test.expected_return))}", InputColor.WARNING)
+            log(f"       Received: {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
 
     log(f"[PASS] {test.name}", InputColor.SUCCESS)
