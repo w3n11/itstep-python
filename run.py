@@ -63,6 +63,31 @@ def prerequisite_noglobals(file: str) -> bool:
     return True
 
 
+def prerequisite_forbidden_modules(file: str) -> bool:
+    with open(file, "r", encoding="utf-8") as f:
+        tree = ast.parse(f.read())
+
+    forbidden_modules = {"sys", "os", "subprocess", "tests"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in forbidden_modules:
+                    return False
+        elif isinstance(node, ast.ImportFrom):
+            if node.module in forbidden_modules:
+                return False
+    return True
+
+
+def prerequisite_mypy(file: str) -> bool:
+    result = subprocess.run(
+        ["mypy", file, "--ignore-missing-imports"],
+        capture_output=True,
+        text=True
+    )
+    return result.returncode == 0
+
+
 def divider(text: str = "", length: int = 45):
     if text == "":
         return "═" * length
@@ -110,6 +135,10 @@ def run_test(test: tests.TestCase) -> TestResult:
                         actual_return = target_func(*safe_args, **safe_kwargs)
                 finally:
                     sys.settrace(None)
+    except StopIteration:
+        log(f"[FAIL] {test.name} (Waiting for another input)", InputColor.ERROR)
+        log("       Called input() too many times.", InputColor.WARNING)
+        return TestResult.FAIL
     except TimeoutException:
         log(f"[FAIL] {test.name} (Timeout)", InputColor.ERROR)
         log(f"       The program has exceeded the {timeout_seconds} second time limit.", InputColor.WARNING)
@@ -161,7 +190,7 @@ def run_test(test: tests.TestCase) -> TestResult:
             log(f"       Expected: {shorten(repr(test.expected_return))}", InputColor.WARNING)
             log(f"       Received: {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
-    
+
     if test.expected_return is None and actual_return is not None:
         log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
         log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
@@ -190,6 +219,12 @@ def run_tests():
     try:
         if not prerequisite_noglobals(file):
             log("[FAIL] The assignment uses global variables.", InputColor.ERROR)
+            prerequisites_passed = False
+        if not prerequisite_forbidden_modules(file):
+            log("[FAIL] The assignment uses a forbidden module.", InputColor.ERROR)
+            prerequisites_passed = False
+        if not prerequisite_mypy(file):
+            log("[FAIL] The assignment does not use stricter typing.", InputColor.ERROR)
             prerequisites_passed = False
     except SyntaxError:
         log("[FAIL] Syntax error", InputColor.ERROR)
