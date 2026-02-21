@@ -60,7 +60,8 @@ def generate() -> list[TestCase]:
             name="age_verification(21) < \"18\"",
             func="age_verification",
             inputs=["18"],
-            expected_return=False
+            expected_return=False,
+            args=(21,)
         )
     )
 
@@ -69,7 +70,8 @@ def generate() -> list[TestCase]:
             name="age_verification(21) < \"21\"",
             func="age_verification",
             inputs=["21"],
-            expected_return=True
+            expected_return=True,
+            args=(21,)
         )
     )
 
@@ -78,7 +80,8 @@ def generate() -> list[TestCase]:
             name="age_verification(21) < \"35\"",
             func="age_verification",
             inputs=["35"],
-            expected_return=True
+            expected_return=True,
+            args=(21,)
         )
     )
 
@@ -91,9 +94,22 @@ def generate() -> list[TestCase]:
                 name=f"age_verification({a}) < \"{b}\" (random)",
                 func="age_verification",
                 inputs=[str(b)],
-                expected_return=b >= a
+                expected_return=b >= a,
+                args=(a,)
             )
         )
+
+    result.append(
+        TestCase(
+            name="dice_roll()",
+            func="dice_roll",
+            iterations=20,
+            expected_return=lambda results: (
+                all(isinstance(x, int) and 1 <= x <= 6 for x in results)
+                and len(set(results)) > 1
+            )
+        )
+    )
 
     result.append(
         TestCase(
@@ -155,18 +171,6 @@ def generate() -> list[TestCase]:
         )
     )
 
-    result.append(
-        TestCase(
-            name="dice_roll()",
-            func="dice_roll",
-            iterations=20,
-            expected_return=lambda results: (
-                all(isinstance(x, int) and 1 <= x <= 6 for x in results)
-                and len(set(results)) > 1
-            )
-        )
-    )
-
     return result
 
 
@@ -179,6 +183,45 @@ def generate_bonus() -> list[TestCase]:
             func="is_prime",
             expected_return=True,
             args=(large_prime,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="hello() < \"  \"",
+            func="hello",
+            expected_print="Hello everyone!\n",
+            inputs=["  "]
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="age_verification(15) < \"fifteen\"",
+            func="age_verification",
+            expected_return=False,
+            inputs=["fifteen"],
+            args=(15,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="age_verification(15) < \"\"",
+            func="age_verification",
+            expected_return=False,
+            inputs=[""],
+            args=(15,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="dice_roll() (fair rolls)",
+            func="dice_roll",
+            iterations=6000,
+            expected_return=lambda results: all(800 < results.count(i) < 1200 for i in range(1, 7)),
+            timeout=5.0
         )
     )
     return result

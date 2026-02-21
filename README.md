@@ -35,12 +35,12 @@ Testy se Vám ani nespustí, pokud:
 
 ## Zadání
 ### Vstup/Výstup
-Implementujte funkci `hello_input()`, která načte ze vstupu jméno a následně vypíše `Hello <jméno>!`. Pokud je vstup prázdný, vypíše `Hello everyone!`.
+Implementujte funkci `hello_input()`, která načte ze vstupu jméno a následně vypíše `Hello <jméno>!`. Pokud je vstup prázdný nebo obsahuje jen bílé znaky, vypíše `Hello everyone!`.
 
 `input` `print` `==`
 
 ### Ověření věku
-Implementujte funkci `age_verification(limit)`, která načte ze vstupu číslo a vrátí `True`, pokud je načtená hodnota větší nebo rovna `limit`. `False` jinak.
+Implementujte funkci `age_verification(limit)`, která načte ze vstupu číslo a vrátí `True`, pokud je načtená hodnota větší nebo rovna `limit`. Pokud bude číslo zadané na vstupu menší nebo jej nepůjde načíst, vraťte `False`.
 
 `<` `>` `return` `int`
 
