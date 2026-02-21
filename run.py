@@ -70,20 +70,18 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
     default_allowed_modules = {"random", "math", "datetime", "typing", "collections"}
     extra: set[str] = set()
     allowed_modules = default_allowed_modules.union(extra)
-    
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 base_module = alias.name.split('.')[0]
                 if base_module not in allowed_modules:
                     return False, alias.name
-                    
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 base_module = node.module.split('.')[0]
                 if base_module not in allowed_modules:
                     return False, node.module
-                    
     return True, ""
 
 
@@ -311,10 +309,10 @@ def run_tests():
     log(f" Time Elapsed:    {elapsed_time:.2f}s", InputColor.BASE)
     log(f" Total Tests:     {tests_total}\n", InputColor.BASE)
 
-    log(f" Passed:     {tests_passed}", InputColor.SUCCESS if tests_passed == tests_total else InputColor.WARNING)
-    log(f" Failed:     {tests_failed}", InputColor.WARNING if tests_failed > 0 else InputColor.SUCCESS)
-    log(f" Exceptions: {tests_error}", InputColor.ERROR if tests_error > 0 else InputColor.SUCCESS)
-    log(f" Skipped:    {tests_skipped}", InputColor.WARNING if tests_skipped > 0 else InputColor.SUCCESS)
+    log(f" Passed:          {tests_passed}", InputColor.SUCCESS if tests_passed == tests_total else InputColor.WARNING)
+    log(f" Failed:          {tests_failed}", InputColor.WARNING if tests_failed > 0 else InputColor.SUCCESS)
+    log(f" Exceptions:      {tests_error}", InputColor.ERROR if tests_error > 0 else InputColor.SUCCESS)
+    log(f" Skipped:         {tests_skipped}", InputColor.WARNING if tests_skipped > 0 else InputColor.SUCCESS)
 
     print()
 
