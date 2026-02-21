@@ -161,7 +161,7 @@ def run_test(test: tests.TestCase) -> TestResult:
             log(f"       Expected: {shorten(repr(test.expected_return))}", InputColor.WARNING)
             log(f"       Received: {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
-    
+
     if test.expected_return is None and actual_return is not None:
         log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
         log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
