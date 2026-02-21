@@ -219,7 +219,7 @@ def generate_bonus() -> list[TestCase]:
     large_prime = 3400470137
     result.append(
         TestCase(
-            name="is_prime() efficiency",
+            name="is_prime() (efficiency)",
             func="is_prime",
             expected_return=True,
             args=(large_prime,)
