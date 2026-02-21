@@ -177,16 +177,6 @@ def generate() -> list[TestCase]:
 
 def generate_bonus() -> list[TestCase]:
     result: list[TestCase] = []
-    large_prime = 3400470137
-    result.append(
-        TestCase(
-            name="is_prime() efficiency",
-            func="is_prime",
-            expected_return=True,
-            args=(large_prime,)
-        )
-    )
-
     result.append(
         TestCase(
             name="hello() < \"  \"",
@@ -223,6 +213,16 @@ def generate_bonus() -> list[TestCase]:
             iterations=6000,
             expected_return=lambda results: all(800 < results.count(i) < 1200 for i in range(1, 7)),
             timeout=5.0
+        )
+    )
+
+    large_prime = 3400470137
+    result.append(
+        TestCase(
+            name="is_prime() efficiency",
+            func="is_prime",
+            expected_return=True,
+            args=(large_prime,)
         )
     )
     return result
