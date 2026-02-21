@@ -63,20 +63,28 @@ def prerequisite_noglobals(file: str) -> bool:
     return True
 
 
-def prerequisite_forbidden_modules(file: str) -> bool:
+def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
     with open(file, "r", encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
-    forbidden_modules = {"sys", "os", "subprocess", "tests"}
+    default_allowed_modules = {"random", "math", "datetime", "typing", "collections"}
+    extra: set[str] = set()
+    allowed_modules = default_allowed_modules.union(extra)
+    
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name in forbidden_modules:
-                    return False
+                base_module = alias.name.split('.')[0]
+                if base_module not in allowed_modules:
+                    return False, alias.name
+                    
         elif isinstance(node, ast.ImportFrom):
-            if node.module in forbidden_modules:
-                return False
-    return True
+            if node.module:
+                base_module = node.module.split('.')[0]
+                if base_module not in allowed_modules:
+                    return False, node.module
+                    
+    return True, ""
 
 
 def prerequisite_mypy(file: str) -> bool:
@@ -220,8 +228,8 @@ def run_tests():
         if not prerequisite_noglobals(file):
             log("[FAIL] The assignment uses global variables.", InputColor.ERROR)
             prerequisites_passed = False
-        if not prerequisite_forbidden_modules(file):
-            log("[FAIL] The assignment uses a forbidden module.", InputColor.ERROR)
+        only_allowed_modules, bad_module = prerequisite_forbidden_modules(file):
+            log(f"[FAIL] The assignment uses a forbidden module: {bad_module}", InputColor.ERROR)
             prerequisites_passed = False
         if not prerequisite_mypy(file):
             log("[FAIL] The assignment does not use stricter typing.", InputColor.ERROR)
