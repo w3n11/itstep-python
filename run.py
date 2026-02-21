@@ -136,13 +136,18 @@ def run_test(test: tests.TestCase) -> TestResult:
         log(f"       {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
         return TestResult.ERROR
 
-    program_result = program_output.getvalue()
+    program_print = program_output.getvalue()
 
-    if test.expected_print is not None and test.expected_print != program_result:
+    if test.expected_print is not None and test.expected_print != program_print:
         log(f"[FAIL] {test.name} (Invalid output)", InputColor.ERROR)
         log(f"       Expected: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
             InputColor.WARNING)
-        log(f"       Received: {shorten(repr(program_result))} (len={len(program_result)})", InputColor.WARNING)
+        log(f"       Received: {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
+        return TestResult.FAIL
+
+    if test.expected_print is None and program_print != "":
+        log(f"[FAIL] {test.name} (Unexpected output)", InputColor.ERROR)
+        log(f"       {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
 
     if test.expected_return is not None:
@@ -156,6 +161,11 @@ def run_test(test: tests.TestCase) -> TestResult:
             log(f"       Expected: {shorten(repr(test.expected_return))}", InputColor.WARNING)
             log(f"       Received: {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
+    
+    if test.expected_return is None and actual_return is not None:
+        log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
+        log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
+        return TestResult.FAIL
 
     log(f"[PASS] {test.name}", InputColor.SUCCESS)
     return TestResult.SUCCESS
