@@ -41,16 +41,14 @@ def shorten(text: str, max_len: int = 60) -> str:
     return f"{begin} ... {tail}"
 
 
-def prerequisite_flake8(file: str) -> bool:
+def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
-        ["flake8", file],
+        ["flake8", file, "--max-line-length", "120"],
         capture_output=True,
         text=True
     )
 
-    if result.returncode != 0:
-        return False
-    return True
+    return result.returncode == 0, result.stdout
 
 
 def prerequisite_noglobals(file: str) -> bool:
@@ -67,8 +65,15 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
     with open(file, "r", encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
-    default_allowed_modules = {"random", "math", "datetime", "typing", "collections"}
-    extra: set[str] = set()
+    default_allowed_modules = {
+        "random",
+        "math",
+        "datetime",
+        "typing",
+        "collections",
+        "time"
+    }
+    extra: set[str] = {}  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
 
     for node in ast.walk(tree):
@@ -85,13 +90,13 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
     return True, ""
 
 
-def prerequisite_mypy(file: str) -> bool:
+def prerequisite_mypy(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         ["mypy", file, "--ignore-missing-imports"],
         capture_output=True,
         text=True
     )
-    return result.returncode == 0
+    return result.returncode == 0, result.stdout
 
 
 def divider(text: str = "", length: int = 45):
@@ -180,7 +185,12 @@ def run_test(test: tests.TestCase) -> TestResult:
         log(f"       Received: {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
 
-    if test.expected_print is None and program_print != "":
+    if test.verify_print is not None and not test.verify_print(program_print):
+        log(f"[FAIL] {test.name} (Invalid output)", InputColor.ERROR)
+        log("       The print does not meet the specified criteria.", InputColor.WARNING)
+        return TestResult.FAIL
+
+    if test.expected_print is None and program_print != "" and test.verify_print is None:
         log(f"[FAIL] {test.name} (Unexpected output)", InputColor.ERROR)
         log(f"       {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
@@ -215,8 +225,10 @@ def run_tests():
     prerequisites_passed: bool = True
     file: str = "assignment.py"
     try:
-        if not prerequisite_flake8(file):
+        pep8_fulfilled, flake8_stdout = prerequisite_flake8(file)
+        if not pep8_fulfilled:
             log("[FAIL] The assignment does not meet PEP 8 standard.", InputColor.ERROR)
+            log(f"       {flake8_stdout}")
             prerequisites_passed = False
     except Exception as e:
         log(f"[FAIL] Unexpected error: {e}", InputColor.ERROR)
@@ -230,8 +242,10 @@ def run_tests():
         if not only_allowed_modules:
             log(f"[FAIL] The assignment uses a forbidden module: {bad_module}", InputColor.ERROR)
             prerequisites_passed = False
-        if not prerequisite_mypy(file):
+        mypy_passed, mypy_stderr = prerequisite_mypy(file)
+        if not mypy_passed:
             log("[FAIL] The assignment does not use stricter typing.", InputColor.ERROR)
+            log(f"       {mypy_stderr}")
             prerequisites_passed = False
     except SyntaxError:
         log("[FAIL] Syntax error", InputColor.ERROR)
