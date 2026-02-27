@@ -43,7 +43,7 @@ def shorten(text: str, max_len: int = 60) -> str:
 
 def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
-        ["flake8", file, "--max-line-length", "120"],
+        ["flake8", file],
         capture_output=True,
         text=True
     )
