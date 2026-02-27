@@ -34,7 +34,7 @@ Až testy spustíte, vypíše se vám přehledná tabulka toho, co už funguje `
 
 ---
 
-## ⚖️ Pravidla hry (Zákony frameworku)
+## ⚖️ Pravidla
 
 Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat následující pravidla. Pokud je porušíte, systém vás k testům ani nepustí:
 
@@ -54,20 +54,20 @@ Svá řešení pište do souboru `assignment.py`. Pod každým zadáním najdete
 
 ### 1. Vstup a Výstup
 Implementujte funkci `hello()`, která načte ze vstupu jméno uživatele a následně vypíše `Hello <jméno>!`. Pokud je vstup prázdný nebo obsahuje jen bílé (prázdné) znaky, vypíše univerzální `Hello everyone!`.
-> **Koncepty k zamyšlení:** `input()`, `print()`, `==`, odstraňování mezer...
+> **Může se hodit:** `input()`, `print()`, `==`, `strip()`
 
 ### 2. Ověření věku
 Implementujte funkci `age_verification(limit)`, která se zeptá uživatele na jeho věk (načte ze vstupu číslo) a vrátí `True`, pokud je zadaná hodnota větší nebo rovna parametru `limit`. Pokud bude číslo zadané na vstupu menší, **nebo pokud uživatel zadá text, který nelze na číslo převést**, vraťte `False`.
-> **Koncepty k zamyšlení:** `>`, `<`, `return`, převod přes `int()`, zachytávání výjimek...
+> **Může se hodit:** `>`, `<`, `return`,`int()`, `try`, `except`
 
 ### 3. Hod kostkou
 Implementujte funkci `dice_roll()`, která po zavolání vrátí náhodné celé číslo v intervalu od 1 do 6 (včetně).
-> **Koncepty k zamyšlení:** `import`, modul `random`...
+> **Může se hodit:** `import`, `random`...
 
 ### 4. Detekce prvočísla
 Implementujte funkci `is_prime(n)`, která vrátí `True`, pokud je předané číslo `n` prvočíslo. V opačném případě vrátí `False`. 
 *Bonusová výzva: Zamyslete se nad tím, jak by tento algoritmus bylo možné matematicky optimalizovat, aby zvládl bleskově ověřit i obrovská čísla. Obyčejný cyklus vám u velkých čísel může narazit na časový limit!*
-> **Koncepty k zamyšlení:** operátor modulo `%`, cykly `for` / `while`, `range()`...
+> **Může se hodit:** `%`, `for` / `while`, `range()`...
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
