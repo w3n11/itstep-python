@@ -43,7 +43,7 @@ def shorten(text: str, max_len: int = 60) -> str:
 
 def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
-        ["flake8", file],
+        [sys.executable, "-m", "flake8", file],
         capture_output=True,
         text=True
     )
@@ -92,7 +92,7 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
 
 def prerequisite_mypy(file: str) -> tuple[bool, str]:
     result = subprocess.run(
-        ["mypy", file, "--ignore-missing-imports"],
+        [sys.executable, "-m", "mypy", file, "--ignore-missing-imports"],
         capture_output=True,
         text=True
     )
