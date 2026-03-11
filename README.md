@@ -4,10 +4,7 @@ Vítejte v první lekci! Nejprve si připravíme prostředí pro vývoj. Dodržt
 
 1. Vstupte do složky `Dokumenty` (`Documents`) a vytvořte si složku s názvem ve tvaru `JmenoPrijmeni`. To bude vaše pracovní složka. *(Pokud si během tohoto kurzu přesednete k jinému počítači, vytvoříte si novou složku se svým jménem i tam).*
 2. Otevřete program **Visual Studio Code**. Otevřete svou složku pomocí zkratky `Ctrl+K` a následně `Ctrl+O`.
-3. V levém panelu otevřete `Rozšíření` (`Extensions`) a nainstalujte rozšíření **Flake8**.
-4. V nastavení tohoto rozšíření vepište do políčka `Flake8: Args` hodnotu `--max-line-length=120` a potvrďte.
-5. Pokud nemáte nainstalována rozšíření **Python**, **Pylance** a **Python Debugger**, nainstalujte je.
-6. Otevřete terminál (příkazový řádek) ve VS Code a nainstalujte potřebné kontrolní moduly pomocí příkazu:
+3. Otevřete terminál (příkazový řádek) ve VS Code a nainstalujte potřebné kontrolní moduly pomocí příkazu:
    `pip install -r requirements.txt`
 
 🎉 **Gratuluji! To nejtěžší (nastavení prostředí) máte pravděpodobně dnes za sebou.**
