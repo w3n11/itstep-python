@@ -105,7 +105,7 @@ def generate() -> list[TestCase]:
         TestCase(
             name="dice_roll()",
             func="dice_roll",
-            iterations=20,
+            iterations=100,
             expected_return=lambda results: (
                 all(isinstance(x, int) and 1 <= x <= 6 for x in results)
                 and len(set(results)) > 1
