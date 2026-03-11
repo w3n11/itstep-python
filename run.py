@@ -24,8 +24,8 @@ class InputColor(Enum):
 
 
 class TestResult(Enum):
-    SUCCESS = 0,
-    FAIL = 1,
+    SUCCESS = 0
+    FAIL = 1
     ERROR = 2
     SKIP = 3
 
