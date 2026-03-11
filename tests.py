@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import random
 from typing import Any, Callable
 
 
@@ -177,4 +178,52 @@ def generate() -> list[TestCase]:
 
 def generate_bonus() -> list[TestCase]:
     result: list[TestCase] = []
+    result.append(
+        TestCase(
+            name="hello() < \"  \"",
+            func="hello",
+            expected_print="Hello everyone!\n",
+            inputs=["  "]
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="age_verification(15) < \"fifteen\"",
+            func="age_verification",
+            expected_return=False,
+            inputs=["fifteen"],
+            args=(15,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="age_verification(15) < \"\"",
+            func="age_verification",
+            expected_return=False,
+            inputs=[""],
+            args=(15,)
+        )
+    )
+
+    result.append(
+        TestCase(
+            name="dice_roll() (fair rolls)",
+            func="dice_roll",
+            iterations=6000,
+            expected_return=lambda results: all(800 < results.count(i) < 1200 for i in range(1, 7)),
+            timeout=5.0
+        )
+    )
+
+    large_prime = 3400470137
+    result.append(
+        TestCase(
+            name="is_prime() (efficiency)",
+            func="is_prime",
+            expected_return=True,
+            args=(large_prime,)
+        )
+    )
     return result
