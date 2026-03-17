@@ -218,7 +218,6 @@ def run_test(test: tests.TestCase) -> TestResult:
 
 def run_tests():
     log(divider(f"TEST RUN {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}") + "\n", InputColor.INFO)
-    global_start_time = time.time()
 
     # --- PREREQUISITES START ---
     log("[INFO] Checking prerequisites...", InputColor.INFO)
@@ -279,6 +278,7 @@ def run_tests():
     # --- PREREQUISITES END ---
 
     log("\n[INFO] Running tests...", InputColor.INFO)
+    global_start_time = time.time()
 
     # --- TEST DEFINITIONS START ---
     test_cases: list[tests.TestCase] = tests.generate()

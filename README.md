@@ -61,10 +61,20 @@ Implementujte funkci `age_verification(limit)`, která se zeptá uživatele na j
 Implementujte funkci `dice_roll()`, která po zavolání vrátí náhodné celé číslo v intervalu od 1 do 6 (včetně).
 > **Může se hodit:** `import`, `random`...
 
-### 4. Detekce prvočísla
-Implementujte funkci `is_prime(n)`, která vrátí `True`, pokud je předané číslo `n` prvočíslo. V opačném případě vrátí `False`. 
-*Bonusová výzva: Zamyslete se nad tím, jak by tento algoritmus bylo možné matematicky optimalizovat, aby zvládl bleskově ověřit i obrovská čísla. Obyčejný cyklus vám u velkých čísel může narazit na časový limit!*
+
+### 4. Načítání a zpracování vstupu - výpočet součtu
+Implementujte funkci `load_and_print_sum()`, která si od uživatele vyžádá jedno číslo, které udává kolik čísel má sečíst. Následně si od uživatele takový počet čísel vyžádá a vypíše `Sum: <total>`, kde `<total>` je součet zadaných čísel.
+> **Může se hodit:** `for`, `in`, `range()`, `int()`, `input()`
+
+### 5. Načítání a zpracování vstupu - výpočet průměru
+Implementujte funkci `load_and_print_avg()`, která od uživatele načítá čísla, až dokud uživatel nezadá `-1`. Poté vypíše `Avg: <average>`, kde `<average>` je průměr všech zadaných čísel, bez konečné `-1`.
+> **Může se hodit:** `while`, `if`, `break`, `input()`, `int()`, `f"Text: {float_variable:.2f}"`
+
+### 6. Detekce prvočísla
+Implementujte funkci `is_prime(n)`, která vrátí `True`, pokud je předané číslo `n` prvočíslo. V opačném případě vrátí `False`.
 > **Může se hodit:** `%`, `for` / `while`, `range()`...
+
+*Bonusová výzva: Zamyslete se nad tím, jak by tento algoritmus bylo možné matematicky optimalizovat, aby zvládl bleskově ověřit i obrovská čísla. Obyčejný cyklus vám u velkých čísel může narazit na časový limit!*
 
 ---
 **📦 Povolené moduly v dnešní lekci:**

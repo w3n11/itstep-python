@@ -112,6 +112,31 @@ def generate() -> list[TestCase]:
             )
         )
     )
+    for _ in range(5):
+        length: int = random.randint(3, 7)
+        values: list[int] = [random.randint(1, 5) for __ in range(length)]
+        input_values: list[str] = [str(length)] + [str(val) for val in values]
+        result.append(
+            TestCase(
+                name=f"load_and_print_sum() < {' '.join(input_values)}",
+                func="load_and_print_sum",
+                inputs=input_values,
+                expected_print=f"Sum: {sum(values)}\n"
+            )
+        )
+
+    for _ in range(5):
+        length: int = random.randint(3, 7)
+        values: list[int] = [random.randint(1, 5) for __ in range(length)]
+        input_values: list[str] = [str(val) for val in values] + ["-1"]
+        result.append(
+            TestCase(
+                name=f"load_and_print_avg() < {' '.join(input_values)}",
+                func="load_and_print_avg",
+                inputs=input_values,
+                expected_print=f"Avg: {round(sum(values) / length, 2):.2f}\n"
+            )
+        )
 
     result.append(
         TestCase(
