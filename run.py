@@ -170,7 +170,7 @@ def run_test(test: tests.TestCase) -> TestResult:
                 log(f"       Your code called this function {mock_obj.call_count}x.", InputColor.WARNING)
                 return TestResult.FAIL
     except StopIteration:
-        log(f"[FAIL] {test.name} (Waiting for another input)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Deadlock)", InputColor.ERROR)
         log("       Called input() too many times.", InputColor.WARNING)
         return TestResult.FAIL
     except TimeoutException:
