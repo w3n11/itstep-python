@@ -165,12 +165,13 @@ def run_test(test: tests.TestCase) -> TestResult:
         for target, (mock_obj, limit) in mock_trackers.items():
             if mock_obj.call_count > limit:
                 log(f"[FAIL] {test.name} (Exceeded function call limit)", InputColor.ERROR)
-                log(f"       Function '{target.replace("builtins.", "")}' allowed to be called at most {limit}x.",
+                replaced: str = target.replace("builtins.", "")
+                log(f"       Function '{replaced}' allowed to be called at most {limit}x.",
                     InputColor.WARNING)
                 log(f"       Your code called this function {mock_obj.call_count}x.", InputColor.WARNING)
                 return TestResult.FAIL
     except StopIteration:
-        log(f"[FAIL] {test.name} (Deadlock)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Waiting for another input)", InputColor.ERROR)
         log("       Called input() too many times.", InputColor.WARNING)
         return TestResult.FAIL
     except TimeoutException:
