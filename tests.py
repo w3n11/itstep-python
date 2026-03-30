@@ -160,15 +160,15 @@ def generate() -> list[TestCase]:
         )
     )
 
-    PRIMES = [
+    primes = [
         7, 11, 13, 17, 19, 23, 29,
         31, 37, 41, 43, 47, 53, 59, 61, 67,
         71, 73, 79, 83, 89, 97]
 
     random_test_amount: int = 7
     candidates: list[int] = []
-    chosen_primes = random.choices([p for p in PRIMES if p >= 6], k=3)
-    chosen_composites = random.choices([c for c in range(6, 97) if c not in PRIMES], k=random_test_amount - 3)
+    chosen_primes = random.choices([p for p in primes if p >= 6], k=3)
+    chosen_composites = random.choices([c for c in range(6, 97) if c not in primes], k=random_test_amount - 3)
 
     candidates = chosen_primes + chosen_composites
     random.shuffle(candidates)
@@ -178,7 +178,7 @@ def generate() -> list[TestCase]:
             TestCase(
                 name=f"is_prime({candidates[i]}) (random)",
                 func="is_prime",
-                expected_return=candidates[i] in PRIMES,
+                expected_return=candidates[i] in primes,
                 args=(candidates[i],)
             )
         )
