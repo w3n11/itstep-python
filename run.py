@@ -8,6 +8,8 @@ import contextlib
 import sys
 import time
 import tests
+from typing import Any
+import importlib
 
 
 class TimeoutException(BaseException):
@@ -24,8 +26,8 @@ class InputColor(Enum):
 
 
 class TestResult(Enum):
-    SUCCESS = 0
-    FAIL = 1
+    SUCCESS = 0,
+    FAIL = 1,
     ERROR = 2
     SKIP = 3
 
@@ -135,17 +137,39 @@ def run_test(test: tests.TestCase) -> TestResult:
         return tracer
 
     caught_exception: Exception | None = None
+    mock_trackers: dict[str, tuple[Any, int]] = {}
     try:
-        with contextlib.redirect_stdout(program_output):
-            with patch('builtins.input', side_effect=test.inputs):
-                sys.settrace(tracer)
-                try:
-                    if test.iterations > 1:
-                        actual_return = [target_func(*safe_args, **safe_kwargs) for _ in range(test.iterations)]
-                    else:
-                        actual_return = target_func(*safe_args, **safe_kwargs)
-                finally:
-                    sys.settrace(None)
+        with contextlib.ExitStack() as stack:
+            mock_input = stack.enter_context(patch("builtins.input", side_effect=test.inputs))
+
+            for target, limit in test.max_calls.items():
+                if target == "builtins.input":
+                    mock_trackers[target] = (mock_input, limit)
+                else:
+                    mod_name, func_name = target.rsplit(".", 1)
+                    orig_func = getattr(importlib.import_module(mod_name), func_name)
+
+                    mock_obj = stack.enter_context(patch(target=target, wraps=orig_func))
+                    mock_trackers[target] = (mock_obj, limit)
+
+            stack.enter_context(contextlib.redirect_stdout(program_output))
+            sys.settrace(tracer)
+            try:
+                if test.iterations > 1:
+                    actual_return = [target_func(*safe_args, **safe_kwargs) for _ in range(test.iterations)]
+                else:
+                    actual_return = target_func(*safe_args, **safe_kwargs)
+            finally:
+                sys.settrace(None)
+
+        for target, (mock_obj, limit) in mock_trackers.items():
+            if mock_obj.call_count > limit:
+                log(f"[FAIL] {test.name} (Exceeded function call limit)", InputColor.ERROR)
+                replaced: str = target.replace("builtins.", "")
+                log(f"       Function '{replaced}' allowed to be called at most {limit}x.",
+                    InputColor.WARNING)
+                log(f"       Your code called this function {mock_obj.call_count}x.", InputColor.WARNING)
+                return TestResult.FAIL
     except StopIteration:
         log(f"[FAIL] {test.name} (Waiting for another input)", InputColor.ERROR)
         log("       Called input() too many times.", InputColor.WARNING)
@@ -217,6 +241,7 @@ def run_test(test: tests.TestCase) -> TestResult:
 
 
 def run_tests():
+    global_start_time = time.time()
     log(divider(f"TEST RUN {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}") + "\n", InputColor.INFO)
 
     # --- PREREQUISITES START ---
@@ -278,7 +303,6 @@ def run_tests():
     # --- PREREQUISITES END ---
 
     log("\n[INFO] Running tests...", InputColor.INFO)
-    global_start_time = time.time()
 
     # --- TEST DEFINITIONS START ---
     test_cases: list[tests.TestCase] = tests.generate()
