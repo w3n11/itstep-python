@@ -20,10 +20,20 @@ class TestCase:
 
 
 def generate() -> list[TestCase]:
-    result: list[TestCase] = []
+    result: list[TestCase] = [
+        TestCase(
+            name="foo",
+            func="foo"
+        )
+    ]
     return result
 
 
 def generate_bonus() -> list[TestCase]:
-    result: list[TestCase] = []
+    result: list[TestCase] = [
+        TestCase(
+            name="foo",
+            func="foo"
+        )
+    ]
     return result
