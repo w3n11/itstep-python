@@ -236,7 +236,7 @@ def run_test(test: tests.TestCase) -> TestResult:
         return TestResult.FAIL
 
     if test.expected_print is None and program_print != "" and test.verify_print is None:
-        log(f"[FAIL] {test.name} (Unexpected output)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Neočekávaný výstup)", InputColor.ERROR)
         log(f"       {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
 
@@ -414,7 +414,7 @@ def run_tests():
                 log(f"[FAIL] Neočekávaná chyba: {e}", InputColor.ERROR)
                 prerequisites_passed = False
             if pep8_fulfilled:
-                log("[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
+                log("\n[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
             else:
                 log("[PASS] Váš kód funguje bezchybně.", InputColor.SUCCESS)
                 log("[FAIL] Ale není stylisticky správně.", InputColor.ERROR)
