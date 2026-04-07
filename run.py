@@ -8,6 +8,8 @@ import contextlib
 import sys
 import time
 import tests
+from typing import Any
+import importlib
 
 
 class TimeoutException(BaseException):
@@ -43,11 +45,31 @@ def shorten(text: str, max_len: int = 60) -> str:
 
 def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
-        [sys.executable, "-m", "flake8", file],
+        [
+            sys.executable, "-m", "flake8",
+            "--statistics",
+            "--count",
+            file
+        ],
         capture_output=True,
         text=True
     )
+    return result.returncode == 0, result.stdout
 
+
+def prerequisite_flake8_final(file: str) -> tuple[bool, str]:
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "flake8",
+            "--isolated",  # ignore .flake8 file
+            "--max-line-length=120",
+            "--statistics",
+            "--count",
+            file
+        ],
+        capture_output=True,
+        text=True
+    )
     return result.returncode == 0, result.stdout
 
 
@@ -126,7 +148,7 @@ def run_test(test: tests.TestCase) -> TestResult:
     start_time = time.time()
     target_func = getattr(assignment, test.func, None)
     if target_func is None:
-        log(f"[SKIP] {test.func} (Not implemented)", InputColor.SKIP)
+        log(f"[SKIP] {test.func} (Neimplementováno)", InputColor.SKIP)
         return TestResult.SKIP
 
     def tracer(frame, event, arg):
@@ -135,59 +157,82 @@ def run_test(test: tests.TestCase) -> TestResult:
         return tracer
 
     caught_exception: Exception | None = None
+    mock_trackers: dict[str, tuple[Any, int]] = {}
     try:
-        with contextlib.redirect_stdout(program_output):
-            with patch('builtins.input', side_effect=test.inputs):
-                sys.settrace(tracer)
-                try:
-                    if test.iterations > 1:
-                        actual_return = [target_func(*safe_args, **safe_kwargs) for _ in range(test.iterations)]
-                    else:
-                        actual_return = target_func(*safe_args, **safe_kwargs)
-                finally:
-                    sys.settrace(None)
+        with contextlib.ExitStack() as stack:
+            mock_input = stack.enter_context(patch("builtins.input", side_effect=test.inputs))
+
+            for target, limit in test.max_calls.items():
+                if target == "builtins.input":
+                    mock_trackers[target] = (mock_input, limit)
+                else:
+                    mod_name, func_name = target.rsplit(".", 1)
+                    orig_func = getattr(importlib.import_module(mod_name), func_name)
+
+                    mock_obj = stack.enter_context(patch(target=target, wraps=orig_func))
+                    mock_trackers[target] = (mock_obj, limit)
+
+            stack.enter_context(contextlib.redirect_stdout(program_output))
+            sys.settrace(tracer)
+            try:
+                if test.iterations > 1:
+                    actual_return = [target_func(*safe_args, **safe_kwargs) for _ in range(test.iterations)]
+                else:
+                    actual_return = target_func(*safe_args, **safe_kwargs)
+            finally:
+                sys.settrace(None)
+
+        for target, (mock_obj, limit) in mock_trackers.items():
+            if mock_obj.call_count > limit:
+                log(f"[FAIL] {test.name} (Přesáhli jste limit)", InputColor.ERROR)
+                replaced: str = target.replace("builtins.", "")
+                log(f"       Funkci '{replaced}' můžete zavolat nanejvýš {limit}x.",
+                    InputColor.WARNING)
+                log(f"       Zavolali jste ji však {mock_obj.call_count}x.", InputColor.WARNING)
+                return TestResult.FAIL
     except StopIteration:
-        log(f"[FAIL] {test.name} (Waiting for another input)", InputColor.ERROR)
-        log("       Called input() too many times.", InputColor.WARNING)
+        log(f"[FAIL] {test.name} (Deadlock)", InputColor.ERROR)
+        log("       Zavolali jste funkci input() vícekrát, než bylo nutné.", InputColor.WARNING)
         return TestResult.FAIL
     except TimeoutException:
         log(f"[FAIL] {test.name} (Timeout)", InputColor.ERROR)
-        log(f"       The program has exceeded the {timeout_seconds} second time limit.", InputColor.WARNING)
+        log(f"       Vaše funkce přesáhla limit {timeout_seconds} sekund.", InputColor.WARNING)
+        log("       Byla buď neefektivní nebo se zacyklila.", InputColor.INFO)
         return TestResult.FAIL
     except Exception as e:
         caught_exception = e
 
     if test.expected_exception is not None:
         if caught_exception is None:
-            log(f"[FAIL] {test.name} (Expected exception)", InputColor.ERROR)
-            log(f"       Expected: {test.expected_exception.__name__}", InputColor.WARNING)
-            log(f"       But your code returned {actual_return}", InputColor.WARNING)
+            log(f"[FAIL] {test.name} (Byla očekávána výjimka)", InputColor.ERROR)
+            log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
+            log(f"       Obdrženo:  {actual_return}", InputColor.WARNING)
             return TestResult.FAIL
         elif not isinstance(caught_exception, test.expected_exception):
-            log(f"[FAIL] {test.name} (Invalid exception)", InputColor.ERROR)
-            log(f"       Expected: {test.expected_exception.__name__}", InputColor.WARNING)
-            log(f"       Received: {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
+            log(f"[FAIL] {test.name} (Byla očekávána jiná výjimka)", InputColor.ERROR)
+            log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
+            log(f"       Obdrženo:  {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
             return TestResult.ERROR
         else:
             log(f"[PASS] {test.name}", InputColor.SUCCESS)
             return TestResult.SUCCESS
     if caught_exception is not None:
-        log(f"[FAIL] {test.name} (Exception)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Nastala výjimka)", InputColor.ERROR)
         log(f"       {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
         return TestResult.ERROR
 
     program_print = program_output.getvalue()
 
     if test.expected_print is not None and test.expected_print != program_print:
-        log(f"[FAIL] {test.name} (Invalid output)", InputColor.ERROR)
-        log(f"       Expected: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
+        log(f"[FAIL] {test.name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
+        log(f"       Očekáváno: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
             InputColor.WARNING)
-        log(f"       Received: {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
+        log(f"       Obdrženo:  {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
 
     if test.verify_print is not None and not test.verify_print(program_print):
-        log(f"[FAIL] {test.name} (Invalid output)", InputColor.ERROR)
-        log("       The print does not meet the specified criteria.", InputColor.WARNING)
+        log(f"[FAIL] {test.name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
+        log("       Váš výstup nesplňuje požadavky.", InputColor.WARNING)
         return TestResult.FAIL
 
     if test.expected_print is None and program_print != "" and test.verify_print is None:
@@ -198,17 +243,18 @@ def run_test(test: tests.TestCase) -> TestResult:
     if test.expected_return is not None:
         if callable(test.expected_return):
             if not test.expected_return(actual_return):
-                log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
+                log(f"[FAIL] {test.name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
                 log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
+                log("       Návratová hodnota neprošla testem.", InputColor.INFO)
                 return TestResult.FAIL
         elif test.expected_return != actual_return:
-            log(f"[FAIL] {test.name} (Invalid return)", InputColor.ERROR)
-            log(f"       Expected: {shorten(repr(test.expected_return))}", InputColor.WARNING)
-            log(f"       Received: {shorten(repr(actual_return))}", InputColor.WARNING)
+            log(f"[FAIL] {test.name} (Nesprávná návratová hodnota)", InputColor.ERROR)
+            log(f"       Očekáváno: {shorten(repr(test.expected_return))}", InputColor.WARNING)
+            log(f"       Obdrženo: {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
 
     if test.expected_return is None and actual_return is not None:
-        log(f"[FAIL] {test.name} (Unexpected return value)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
         log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
         return TestResult.FAIL
 
@@ -217,41 +263,41 @@ def run_test(test: tests.TestCase) -> TestResult:
 
 
 def run_tests():
-    log(divider(f"TEST RUN {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}") + "\n", InputColor.INFO)
     global_start_time = time.time()
+    log(divider(f"TEST {datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}") + "\n", InputColor.INFO)
 
     # --- PREREQUISITES START ---
-    log("[INFO] Checking prerequisites...", InputColor.INFO)
+    log("[INFO] Kontroluji předpoklady...", InputColor.INFO)
     prerequisites_passed: bool = True
     file: str = "assignment.py"
     try:
         pep8_fulfilled, flake8_stdout = prerequisite_flake8(file)
         if not pep8_fulfilled:
-            log("[FAIL] The assignment does not meet PEP 8 standard.", InputColor.ERROR)
-            log(f"       {flake8_stdout}")
+            log("[FAIL] Vaše řešení neodpovídá uvolněnému standardu PEP 8.", InputColor.ERROR)
+            log(f"{flake8_stdout}")
             prerequisites_passed = False
     except Exception as e:
-        log(f"[FAIL] Unexpected error: {e}", InputColor.ERROR)
+        log(f"[FAIL] Neočekávané chyba: {e}", InputColor.ERROR)
         prerequisites_passed = False
 
     try:
         if not prerequisite_noglobals(file):
-            log("[FAIL] The assignment uses global variables.", InputColor.ERROR)
+            log("[FAIL] Váš kód nesmí používat globální proměnné.", InputColor.ERROR)
             prerequisites_passed = False
         only_allowed_modules, bad_module = prerequisite_forbidden_modules(file)
         if not only_allowed_modules:
-            log(f"[FAIL] The assignment uses a forbidden module: {bad_module}", InputColor.ERROR)
+            log(f"[FAIL] Nesmíte použít tento modul: {bad_module}", InputColor.ERROR)
             prerequisites_passed = False
         mypy_passed, mypy_stderr = prerequisite_mypy(file)
         if not mypy_passed:
-            log("[FAIL] The assignment does not use stricter typing.", InputColor.ERROR)
+            log("[FAIL] Váš kód nedodržuje striktního typování.", InputColor.ERROR)
             log(f"       {mypy_stderr}")
             prerequisites_passed = False
     except SyntaxError:
-        log("[FAIL] Syntax error", InputColor.ERROR)
+        log("[FAIL] Syntaktická chyba", InputColor.ERROR)
         prerequisites_passed = False
     except Exception as e:
-        log(f"[FAIL] Unexpected error: {e}", InputColor.ERROR)
+        log(f"[FAIL] Neočekávaná chyba: {e}", InputColor.ERROR)
         prerequisites_passed = False
 
     try:
@@ -263,22 +309,22 @@ def run_tests():
             if output_on_import_str:
                 clean_import = False
         if not clean_import:
-            log("[FAIL] Side effect on import (print)", InputColor.ERROR)
+            log("[FAIL] Vedlejší efekt při importu", InputColor.ERROR)
             log(f"       {shorten(output_on_import_str.strip())}", InputColor.WARNING)
             prerequisites_passed = False
     except Exception as e:
-        log(f"[FAIL] Critical error on loading: {e}", InputColor.ERROR)
+        log(f"[FAIL] Kritická chyba při načítání: {e}", InputColor.ERROR)
         # log("[WARN] Address this issue to your teacher.", InputColor.WARNING)
         prerequisites_passed = False
 
     if not prerequisites_passed:
-        log("[FAIL] Prerequisites not met.", InputColor.ERROR)
+        log("[FAIL] Nesplněny předpoklady.", InputColor.ERROR)
         log("\n" + divider(), InputColor.INFO)
         return
-    log("[PASS] Prerequisites met.", InputColor.SUCCESS)
+    log("[PASS] V pořádku.", InputColor.SUCCESS)
     # --- PREREQUISITES END ---
 
-    log("\n[INFO] Running tests...", InputColor.INFO)
+    log("\n[INFO] Spouštím testy...", InputColor.INFO)
 
     # --- TEST DEFINITIONS START ---
     test_cases: list[tests.TestCase] = tests.generate()
@@ -291,7 +337,7 @@ def run_tests():
     tests_skipped: int = 0
 
     if tests_total == 0:
-        log("[INFO] No test were defined.", InputColor.INFO)
+        log("[INFO] Žádné testy nebyly definovány.", InputColor.INFO)
         return
     not_implemented: list[str] = []
     for case in test_cases:
@@ -318,43 +364,60 @@ def run_tests():
     filled = int(bar_length * tests_passed / tests_total) if tests_total > 0 else 0
     bar = "█" * filled + "░" * (bar_length - filled)
 
-    log("\n" + divider("📊 TEST SUMMARY") + "\n", InputColor.INFO)
+    log("\n" + divider("📊 VÝSLEDKY TESTŮ") + "\n", InputColor.INFO)
 
-    log(f" Time Elapsed:    {elapsed_time:.2f}s", InputColor.BASE)
-    log(f" Total Tests:     {tests_total}\n", InputColor.BASE)
+    log(f" Uplynulý čas:    {elapsed_time:.2f}s", InputColor.BASE)
+    log(f" Celkem testů:    {tests_total}\n", InputColor.BASE)
 
-    log(f" Passed:          {tests_passed}", InputColor.SUCCESS if tests_passed == tests_total else InputColor.WARNING)
-    log(f" Failed:          {tests_failed}", InputColor.WARNING if tests_failed > 0 else InputColor.SUCCESS)
-    log(f" Exceptions:      {tests_error}", InputColor.ERROR if tests_error > 0 else InputColor.SUCCESS)
-    log(f" Skipped:         {tests_skipped}", InputColor.WARNING if tests_skipped > 0 else InputColor.SUCCESS)
+    log(f" Splněno:         {tests_passed}", InputColor.SUCCESS if tests_passed == tests_total else InputColor.WARNING)
+    log(f" Nesplněno:       {tests_failed}", InputColor.WARNING if tests_failed > 0 else InputColor.SUCCESS)
+    log(f" Kritické chyby:  {tests_error}", InputColor.ERROR if tests_error > 0 else InputColor.SUCCESS)
+    log(f" Přeskočeno:      {tests_skipped}", InputColor.WARNING if tests_skipped > 0 else InputColor.SUCCESS)
 
     print()
 
     bar_color = InputColor.SUCCESS if percentage == 100 else InputColor.WARNING
-    print(colored(InputColor.BASE.value, " Progress: ") + colored(bar_color.value, f"{bar} {percentage}%"))
+    print(colored(InputColor.BASE.value, " Postup: ") + colored(bar_color.value, f"{bar} {percentage}%"))
 
     log("\n" + divider(), InputColor.INFO)
 
     print()
     if tests_total == tests_passed:
-        log("[PASS] All tests passed.", InputColor.SUCCESS)
+        log("[PASS] Testy splněny.", InputColor.SUCCESS)
     if tests_error > 0 or tests_failed > 0:
-        log("[FAIL] Not all tests passed. Fix your code and try again.", InputColor.ERROR)
+        log("[FAIL] Ne všechny testy prošly bezchybně.", InputColor.ERROR)
+        log("[WARN] Oprav chyby a zkus to znovu.", InputColor.INFO)
     if tests_skipped > 0:
-        log(f"[WARN] {tests_skipped} tests skipped.", InputColor.WARNING)
+        log(f"[WARN] Testy přeskočeny: {tests_skipped}", InputColor.WARNING)
     print()
 
     if tests_total == tests_passed and tests_total > 0:
         test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
+        bonus_success: bool = True
         if len(test_cases_bonus) > 0:
-            log(divider("BONUS TESTS") + "\n", InputColor.INFO)
-            bonus_success: bool = True
+            log(divider("BONUSOVÉ TESTY") + "\n", InputColor.INFO)
             for case in test_cases_bonus:
                 if run_test(case) != TestResult.SUCCESS:
                     bonus_success = False
             print()
-            if bonus_success:
-                log("[PASS] WELL DONE. YOUR CODE IS PERFECT.\n", InputColor.SUCCESS)
+        else:
+            log("═" * 45, InputColor.INFO)
+        if bonus_success:
+            pep8_fulfilled: bool = False
+            try:
+                pep8_fulfilled, flake8_stdout = prerequisite_flake8_final(file)
+                if not pep8_fulfilled:
+                    log("[FAIL] Vaše řešení neodpovídá standardu PEP 8.", InputColor.ERROR)
+                    log(f"{flake8_stdout}")
+                    prerequisites_passed = False
+            except Exception as e:
+                log(f"[FAIL] Neočekávaná chyba: {e}", InputColor.ERROR)
+                prerequisites_passed = False
+            if pep8_fulfilled:
+                log("[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
+            else:
+                log("[PASS] Váš kód funguje bezchybně.", InputColor.SUCCESS)
+                log("[FAIL] Ale není stylisticky správně.", InputColor.ERROR)
     log("═" * 45, InputColor.INFO)
 
 
