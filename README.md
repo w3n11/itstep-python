@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 02: The Real Deal
+# Python Intermediate - Lekce 02: TUI menu
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
@@ -74,7 +74,7 @@ Můžete si pro vizualizaci přidat výstup: `print(f"Chosen option {i}.")`.
 
 Pokud uživatel zadá na vstupu `0`, a nachází se v našem hlavním seznamu o třech položkách, program se ukončí a vrátí posloupnost platných vstupů zadaných uživatelem v seznamu. Pokud uživatel zadá `0` v kterékoli vložené nabídce, vrátí se o úroveň výš.
 
-Pokud se vám nelíbí téma fantasy RPG, můžete si vymyslet jiné, jméno funkce však ponechejte.
+Pokud se vám nelíbí téma fantasy RPG, můžete si vymyslet jiné.
 
 ## Bonusové úlohy
 
