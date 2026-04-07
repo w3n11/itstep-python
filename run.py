@@ -88,12 +88,12 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         tree = ast.parse(f.read())
 
     default_allowed_modules = {
-        "random",
-        "math",
-        "datetime",
-        "typing",
         "collections",
-        "time"
+        "datetime",
+        "math",
+        "random",
+        "time",
+        "typing"
     }
     extra: set[str] = {}  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
