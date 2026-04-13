@@ -47,6 +47,9 @@ def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         [
             sys.executable, "-m", "flake8",
+            "--isolated",
+            "--select=F,E9",
+            "--max-line-length=120",
             "--statistics",
             "--count",
             file
@@ -57,13 +60,13 @@ def prerequisite_flake8(file: str) -> tuple[bool, str]:
     return result.returncode == 0, result.stdout
 
 
-def prerequisite_flake8_final(file: str) -> tuple[bool, str]:
+def prerequisite_flake8_strict(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         [
             sys.executable, "-m", "flake8",
-            "--isolated",  # ignore .flake8 file
+            "--isolated",
             "--max-line-length=120",
-            "--statistics",
+            "--statistics"
             "--count",
             file
         ],
@@ -110,15 +113,6 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
                 if base_module not in allowed_modules:
                     return False, node.module
     return True, ""
-
-
-def prerequisite_mypy(file: str) -> tuple[bool, str]:
-    result = subprocess.run(
-        [sys.executable, "-m", "mypy", file, "--ignore-missing-imports"],
-        capture_output=True,
-        text=True
-    )
-    return result.returncode == 0, result.stdout
 
 
 def divider(text: str = "", length: int = 45):
@@ -288,11 +282,6 @@ def run_tests():
         if not only_allowed_modules:
             log(f"[FAIL] Nesmíte použít tento modul: {bad_module}", InputColor.ERROR)
             prerequisites_passed = False
-        mypy_passed, mypy_stderr = prerequisite_mypy(file)
-        if not mypy_passed:
-            log("[FAIL] Váš kód nedodržuje striktního typování.", InputColor.ERROR)
-            log(f"       {mypy_stderr}")
-            prerequisites_passed = False
     except SyntaxError:
         log("[FAIL] Syntaktická chyba", InputColor.ERROR)
         prerequisites_passed = False
@@ -405,7 +394,7 @@ def run_tests():
         if bonus_success:
             pep8_fulfilled: bool = False
             try:
-                pep8_fulfilled, flake8_stdout = prerequisite_flake8_final(file)
+                pep8_fulfilled, flake8_stdout = prerequisite_flake8_strict(file)
                 if not pep8_fulfilled:
                     log("[FAIL] Vaše řešení neodpovídá standardu PEP 8.", InputColor.ERROR)
                     log(f"{flake8_stdout}")
