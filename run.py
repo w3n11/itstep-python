@@ -66,7 +66,7 @@ def prerequisite_flake8_strict(file: str) -> tuple[bool, str]:
             sys.executable, "-m", "flake8",
             "--isolated",
             "--max-line-length=120",
-            "--statistics"
+            "--statistics",
             "--count",
             file
         ],
