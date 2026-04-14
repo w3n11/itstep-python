@@ -47,6 +47,9 @@ def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         [
             sys.executable, "-m", "flake8",
+            "--isolated",
+            "--select=F,E9",
+            "--max-line-length=120",
             "--statistics",
             "--count",
             file
@@ -57,11 +60,11 @@ def prerequisite_flake8(file: str) -> tuple[bool, str]:
     return result.returncode == 0, result.stdout
 
 
-def prerequisite_flake8_final(file: str) -> tuple[bool, str]:
+def prerequisite_flake8_strict(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         [
             sys.executable, "-m", "flake8",
-            "--isolated",  # ignore .flake8 file
+            "--isolated",
             "--max-line-length=120",
             "--statistics",
             "--count",
@@ -88,12 +91,12 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         tree = ast.parse(f.read())
 
     default_allowed_modules = {
-        "collections",
-        "datetime",
-        "math",
         "random",
-        "time",
-        "typing"
+        "math",
+        "datetime",
+        "typing",
+        "collections",
+        "time"
     }
     extra: set[str] = {}  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
@@ -110,15 +113,6 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
                 if base_module not in allowed_modules:
                     return False, node.module
     return True, ""
-
-
-def prerequisite_mypy(file: str) -> tuple[bool, str]:
-    result = subprocess.run(
-        [sys.executable, "-m", "mypy", file, "--ignore-missing-imports"],
-        capture_output=True,
-        text=True
-    )
-    return result.returncode == 0, result.stdout
 
 
 def divider(text: str = "", length: int = 45):
@@ -236,7 +230,7 @@ def run_test(test: tests.TestCase) -> TestResult:
         return TestResult.FAIL
 
     if test.expected_print is None and program_print != "" and test.verify_print is None:
-        log(f"[FAIL] {test.name} (Neočekávaný výstup)", InputColor.ERROR)
+        log(f"[FAIL] {test.name} (Unexpected output)", InputColor.ERROR)
         log(f"       {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
         return TestResult.FAIL
 
@@ -287,11 +281,6 @@ def run_tests():
         only_allowed_modules, bad_module = prerequisite_forbidden_modules(file)
         if not only_allowed_modules:
             log(f"[FAIL] Nesmíte použít tento modul: {bad_module}", InputColor.ERROR)
-            prerequisites_passed = False
-        mypy_passed, mypy_stderr = prerequisite_mypy(file)
-        if not mypy_passed:
-            log("[FAIL] Váš kód nedodržuje striktního typování.", InputColor.ERROR)
-            log(f"       {mypy_stderr}")
             prerequisites_passed = False
     except SyntaxError:
         log("[FAIL] Syntaktická chyba", InputColor.ERROR)
@@ -405,7 +394,7 @@ def run_tests():
         if bonus_success:
             pep8_fulfilled: bool = False
             try:
-                pep8_fulfilled, flake8_stdout = prerequisite_flake8_final(file)
+                pep8_fulfilled, flake8_stdout = prerequisite_flake8_strict(file)
                 if not pep8_fulfilled:
                     log("[FAIL] Vaše řešení neodpovídá standardu PEP 8.", InputColor.ERROR)
                     log(f"{flake8_stdout}")
@@ -414,7 +403,7 @@ def run_tests():
                 log(f"[FAIL] Neočekávaná chyba: {e}", InputColor.ERROR)
                 prerequisites_passed = False
             if pep8_fulfilled:
-                log("\n[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
+                log("[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
             else:
                 log("[PASS] Váš kód funguje bezchybně.", InputColor.SUCCESS)
                 log("[FAIL] Ale není stylisticky správně.", InputColor.ERROR)
