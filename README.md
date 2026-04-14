@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 02: TUI menu
+# Python Intermediate - Lekce 03: Bublinkové třídění
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
