@@ -26,9 +26,9 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 1. **Zákaz AI nástrojů (ChatGPT, Claude, Copilot atd.):** V jiných částech výuky vám možná AI povolím, ale tady se učíme naprosté základy logiky. Pokud za vás kód napíše jazykový model, ochudíte se o ten důležitý moment pochopení a naučíte se *prd*. Pište to sami.
 2. **Přísný seznam povolených modulů:** Můžete používat (importovat) pouze moduly, které jsou explicitně povolené na konci tohoto zadání. Jakýkoliv jiný `import` systém zablokuje.
-3. **Žádné hackování:** Je přísně zakázáno pokoušet se pomocí kódu upravovat testovací soubor `run.py`, obcházet testy nebo využívat kód ke škodlivým účelům. Hrajeme fair-play.
-4. **Čistota kódu:** Zákaz používání globálních proměnných. Dodržujte standard PEP 8 (na který dohlíží Flake8) a nebuďte laxní v typování proměnných.
-5. **Spustitelnost:** Kód nesmí obsahovat hrubé syntaktické chyby.
+3. **Žádné hackování:** Je přísně zakázáno pokoušet se pomocí kódu upravovat testovací soubor `run.py`, obcházet testy nebo využívat kód ke škodlivým účelům.
+4. **Čistota kódu:** Nepoužívejte globální proměnné. Obecně jsou považovány za nežádoucí a programátoři se jim vždy snaží vyhnout. Až bude váš kód funkční, můžete se zaměřit na doladění vašeho kódu dle standardu.
+5. **Spustitelnost:** Kód nesmí obsahovat hrubé syntaktické chyby, s nimi nelze program spustit.
 
 > *Pokud se domníváte, že váš kód splňuje všechna pravidla, a systém vás přesto odmítá pustit dál, zavolejte mě.*
 
@@ -36,52 +36,40 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 ## 🛠️ Zadání úloh
 
-Svá řešení pište do souboru `assignment.py`. Pod každým zadáním najdete klíčová slova a koncepty, které by se vám mohly při řešení hodit.
+Svá řešení pište do souboru `assignment.py`.
 
-### 1. Vypsání nabídky
-Implementujte funkci `print_menu(options: list[str])`, která vypíše nabídku menu ve formátu:
+### 1. Bubble sort
+Implementujte funkci `bubble_sort(assorted_list: list[int])`, která vrátí setřízený seznam. Původní seznam **musí zůstat nezměněn**!
+
+V programování je často potřeba něco setřídit. Proto existují třídící algoritmy - a my si jeden takový dnes naprogramujeme. Jmenuje se bubble sort (bublinkové třídění.) Funguje na velmi jednoduchém principu:
+
 ```
-[1] Možnost 1
-[2] Možnost 2
-[3] Možnost 3
-[0] Možnost 4
-```
-Tudíž při zavolání `print_menu(["Hello", "World", "Exit"])` bude výstup vypadat takto:
-```
-[1] Hello
-[2] World
-[0] Exit
+Pokud A > B a zároveň je A nalevo od B, prohoď A a B.
 ```
 
-### 2. Ošetření vstupu
-Implementujte funkci `get_user_input(allowed: list[int])`, která od uživatele vyžádá hodnotu.
-Funkce vyžaduje od uživatele vstup do té doby, než zadá hodnotu ze seznamu `allowed`.
-Ošetřete chyby pomocí struktury:
+**Jak prohodíme obsahy dvou proměnných?**<br>Máte v zásadě dva jednoduché způsoby:
 ```py
-try:
-    # V tomto bloku kódu může nastat chyba,
-    # která způsobí pád programu. Např.:
-    number: int = int("one")
-except ValueError:
-    # Kus kódu, který nastane, pokud v bloku
-    # TRY nastane výjimka ValueError.
+var_a = 1
+var_b = 2
+
+temp = var_a
+var_a = var_b
+var_b = temp
+
+print(f"var_a: {var_a}, var_b: {var_b}")
+```
+vypíše:
+```
+var_a: 2, var_b: 1
 ```
 
-### 3. Můj první program
-Sestavte program `dumb_menu()`, který vypíše nabídku alespoň tří kategorií zboží obchodníka v RPG (např. zbraně, zbroj, lektvary). Každá z možností povede na další nabídku o dvou možnostech (u zbraní například na dálku, na blízko).
+To je sice způsob správný a zaručený, ale Python má přeci jenom něco navíc, a to jednoduché prohození obsahu dvou proměnných pomocí:
+```py
+var_a, var_b = var_b, var_a
+```
 
-Můžete si pro vizualizaci přidat výstup: `print(f"Chosen option {i}.")`.
+Zamyslete se nad tím, jak by šel tento algoritmus optimalizovat.
 
-Pokud uživatel zadá na vstupu `0`, a nachází se v našem hlavním seznamu o třech položkách, program se ukončí a vrátí posloupnost platných vstupů zadaných uživatelem v seznamu. Pokud uživatel zadá `0` v kterékoli vložené nabídce, vrátí se o úroveň výš.
-
-Pokud se vám nelíbí téma fantasy RPG, můžete si vymyslet jiné.
-
-## Bonusové úlohy
-
-Pokud jste vyřešili výše uvedené úlohy správně, můžete řešit níže uvedené bonusové úlohy.
-
-### 1. Pokročilé házení kostkou
-Implementujte funkci `dice_roll(dice_str: str) -> int`, která dostane na vstupu string ve tvaru `AdB+CdD`, kde `A`, `B`, `C` a `D` jsou celá kladná čísla, reprezentující sadu kostek a vrátí výsledek hodu těmito kostkami. Například pro string `2d6+1d12` házíme dvěma šestistěnnými kostkami a jednou dvanáctistěnnou kostkou.
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
