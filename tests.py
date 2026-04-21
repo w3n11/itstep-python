@@ -80,4 +80,109 @@ def generate() -> list[TestCase]:
 
 def generate_bonus() -> list[TestCase]:
     result: list[TestCase] = []
+    to_search_short_odd_len = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    to_search_short_even_len = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    result.extend([
+        TestCase(
+            name="linear_search první prvek",
+            func="linear_search",
+            args=(to_search_short_odd_len, 1),
+            expected_return=True
+        ),
+        TestCase(
+            name="linear_search prostřední prvek",
+            func="linear_search",
+            args=(to_search_short_odd_len, 5),
+            expected_return=True
+        ),
+        TestCase(
+            name="linear_search poslední prvek",
+            func="linear_search",
+            args=(to_search_short_odd_len, 9),
+            expected_return=True
+        ),
+        TestCase(
+            name="linear_search chybějící prvek",
+            func="linear_search",
+            args=(to_search_short_odd_len, 10),
+            expected_return=False
+        ),
+        TestCase(
+            name="linear_search chybějící prvek",
+            func="linear_search",
+            args=(to_search_short_odd_len, 0),
+            expected_return=False
+        )
+    ])
+    result.extend([
+        TestCase(
+            name="binary_search první prvek (lichá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_odd_len, 1),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search prostřední prvek (lichá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_odd_len, 5),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search poslední prvek (lichá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_odd_len, 9),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search chybějící prvek (lichá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_odd_len, 10),
+            expected_return=False
+        ),
+        TestCase(
+            name="binary_search chybějící prvek (lichá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_odd_len, 0),
+            expected_return=False
+        ),
+        TestCase(
+            name="binary_search první prvek (sudá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_even_len, 1),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search prostřední prvek (sudá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_even_len, 5),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search poslední prvek (sudá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_even_len, 9),
+            expected_return=True
+        ),
+        TestCase(
+            name="binary_search chybějící prvek (sudá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_even_len, 11),
+            expected_return=False
+        ),
+        TestCase(
+            name="binary_search chybějící prvek (sudá délka seznamu)",
+            func="binary_search",
+            args=(to_search_short_even_len, 0),
+            expected_return=False
+        )
+    ])
+    should_success = random.choice([True, False])
+    target = random.randint(450_000_000, 550_000_000)
+    to_search_large = range(target + 1 if should_success else target - 1)
+    result.append(TestCase(
+        name="binary_search efektivita",
+        func="binary_search",
+        args=(to_search_large, target),
+        expected_return=should_success
+    ))
     return result

@@ -71,6 +71,33 @@ var_a, var_b = var_b, var_a
 Zamyslete se nad tím, jak by šel tento algoritmus optimalizovat.
 
 
+## Bonusové úlohy
+
+Pokud jste splnili všechny povinné úlohy správně, můžete se pustit do vypracování bonusu.
+
+### 1. Linear search
+Implementujte funkci `linear_search(to_search, target)`, která prohledá seznam **lineárně** (jeden po druhém) a vrátí `True`, pokud je hodnota `target` v seznamu `to_search`. Jinak `False`.
+
+### 2. Binary search
+Implementujte funkci `binary_search(to_search, target)`, která prohledá seznam **binárně** (metodou půlení intervalů) a vrátí `True`, pokud je hodnota `target` v seznamu `to_search`. Jinak `False`.
+
+Metoda půlení intervalů funguje takto:
+
+Představte si, že hledáte `7` v seznamu čísel `2, 3, 4, 5, 6, 7, 8, 9, 10`.
+
+1. Zvolíte prostřední prvek. Tím rozdělíte seznam na dvě poloviny, na tu, která obsahuje hodnoty menší než ta, která je uprostřed, a na tu druhou, kde jsou hodnoty větší.
+2. Porovnáte příslušnou hodnotu: `6 (prostřední hodnota) < 7 (náš cíl)`. Šest je menší než sedm, proto se přesuneme do horní poloviny, protože nás nižší hodnoty nezajímají.
+3. Nyní prohledáváme už jen `6, 7, 8, 9, 10`. Stejný případ s prostřední `8`. Ta je tentokrát větší, než `7`, proto se přesuneme do dolní poloviny.
+4. Nyní prohledáváme `6, 7, 8`. Prostřední hodnota je náhodou ta, kterou hledáme. Našli jsme `7`.
+
+```
+2 3 4 5 6 7 8 9 10
+        6 7 8 9 10
+        6 7 8
+          7       stačily nám čtyři kroky, abychom našli 7
+```
+Jaké má tento přístup nevýhody?
+
 ---
 **📦 Povolené moduly v dnešní lekci:**
 * `collections` *(default)*
