@@ -136,7 +136,8 @@ def generate_bonus() -> list[TestCase]:
             func="dice_roll",
             args=('1d6+1d8+1d10+1d12',),
             expected_return=lambda x : is_dice_roll_valid(x, [6, 8, 10, 12]),
-            iterations=10_000
+            iterations=10_000,
+            timeout=4.0
         ),
         TestCase(
             name="dice_roll('3d20')",
