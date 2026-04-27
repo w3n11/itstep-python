@@ -25,10 +25,10 @@ Až testy spustíte, vypíše se vám přehledná tabulka toho, co už funguje `
 Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat následující pravidla. Pokud je porušíte, systém vás k testům ani nepustí:
 
 1. **Zákaz AI nástrojů (ChatGPT, Claude, Copilot atd.):** V jiných částech výuky vám možná AI povolím, ale tady se učíme naprosté základy logiky. Pokud za vás kód napíše jazykový model, ochudíte se o ten důležitý moment pochopení a naučíte se *prd*. Pište to sami.
-2. **Přísný seznam povolených modulů:** Můžete používat (importovat) pouze moduly, které jsou explicitně povolené na konci tohoto zadání. Jakýkoliv jiný `import` systém zablokuje.
-3. **Žádné hackování:** Je přísně zakázáno pokoušet se pomocí kódu upravovat testovací soubor `run.py`, obcházet testy nebo využívat kód ke škodlivým účelům.
-4. **Čistota kódu:** Nepoužívejte globální proměnné. Obecně jsou považovány za nežádoucí a programátoři se jim vždy snaží vyhnout. Až bude váš kód funkční, můžete se zaměřit na doladění vašeho kódu dle standardu.
-5. **Spustitelnost:** Kód nesmí obsahovat hrubé syntaktické chyby, s nimi nelze program spustit.
+2. **Přísný seznam povolených modulů:** Můžete používat (importovat) pouze moduly, které jsou explicitně povolené na konci tohoto zadání. Jakýkoliv jiný `import` bude zablokován.
+3. **Žádné hackování:** Je zakázáno upravovat testovací soubor `run.py`, obcházet testy nebo využívat kód ke škodlivým účelům.
+4. **Čistota kódu:** Nepoužívejte globální proměnné. Obecně jsou považovány za nežádoucí a programátoři se jim vždy snaží vyhnout. Až bude váš kód funkční, můžete se zaměřit na doladění vašeho kódu dle [standardu PEP 8](https://peps.python.org/pep-0008/).
+5. **Spustitelnost:** Kód nesmí obsahovat hrubé syntaktické chyby, **s nimi nelze program spustit**.
 
 > *Pokud se domníváte, že váš kód splňuje všechna pravidla, a systém vás přesto odmítá pustit dál, zavolejte mě.*
 
@@ -37,6 +37,8 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 ## 🛠️ Zadání úloh
 
 Svá řešení pište do souboru `assignment.py`.
+
+**Doporučení pro dnešní lekci:** Vytvářejte si vlastní testy v `assignment.py` v příslušné sekci. Testy v této lekci nejsou příliš výmluvné a spíše vám neporadí, kde je chyba.
 
 ### 1. Barevné hello world
 Implementujte funkci `hello_world_green()`, která pomocí knihovny `colorama` vypíše zeleně `Hello world`.
@@ -73,6 +75,7 @@ Za `KÓD_BARVY` dosaďte jednu z následujících možností:
 - <span style="color: magenta">MAGENTA</span>
 - <span style="color: white">WHITE</span>
 - <span style="color: black">BLACK</span> (← BLACK)
+- RESET (nastaví barvu zpět na výchozí)
 
 ### 2. Cenzurování výstupu
 Implementujte funkci, `censor_print(to_print, censored_words)`, která vypíše řetězec `to_print: str`, ale ještě před vypsáním v něm nahradí slova z `censored_words: list[str]` červenými hvězdičkami. Počet hvězdiček by měl odpovídat počtu písmen v jednotlivých nahrazovaných slovech. Funkce vrátí počet takto nahrazených slov.
@@ -82,6 +85,8 @@ Požadované chování:
 print(censor_print("Hello world!", ["Hell"]))
 ```
 by vypsalo čtyři červené hvězdičky, protože to nahradilo zacenzurovalo Hell v Hello world! a vrátilo 1, protože to nahradilo jeden výskyt ze seznamu zakázaných slov.
+
+Musíte přitom dbát na to, aby skutečně jen hvězdičky byly červené. Jak docílit toho, aby text za cenzurovanou částí nebyl také červený?
 ___
 Budete k tomu potřebovat funkce `string.replace(old, new)` a `string.count(substr)`. Funkce `replace` nahradí ve stringu všechny výskyty `old` za `new`. Funkce `count` zase vrátí počet výskytů `substr` ve stringu.
 
@@ -101,7 +106,7 @@ print(my_string.count("Hello"))  # 0
 ### 3. QR kód
 Implementujte funkci `print_qr(data: str)`, která vypíše do terminálu QR kód. Na vstupu dostanete data QR kódu v argumentu `data`. Ten sestává z jedniček a nul (`00010100101001110111010110...`) Tato data reprezentují QR kód.
 
-Vaím úkolem bude tato data reprezentovat v bílých (`0`) a černých (`1`) pixelech. Zamyslete se nad tím, jak určíte velikost QR kódu.
+Vaším úkolem bude tato data reprezentovat v bílých (`0`) a černých (`1`) pixelech. Zamyslete se nad tím, jak určíte velikost QR kódu. K implementaci této funkce není třeba využívat `colorama.Fore`, ale vystačíte si pouze s `colorama.Back`.
 
 Chcete-li, můžete si ze souboru `tests.py` vykopírovat funkci `make_qrcode()` a testovat si sami.
 
