@@ -111,7 +111,8 @@ Chcete-li, můžete si ze souboru `tests.py` vykopírovat funkci `make_qrcode()`
 ### 4. Volné zadání
 Naprogramujte sami nějaký kraťoučký projekt, klidně jednu zajímavou či užitečnou funkci, která využívá knihovnu `colorama`.
 
-Nemáte-li nápad, naprogramujte funkci, která 
+Nemáte-li nápad, naprogramujte funkci, která vypíše na červeném podkladu bílé písmeno X o zadané velikosti.
+![md_resources/cross.png](md_resources/cross.png)
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
