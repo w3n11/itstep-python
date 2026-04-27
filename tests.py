@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import random  # noqa: F401
 from typing import Any, Callable
+import qrcode
 
 
 @dataclass
@@ -19,170 +20,80 @@ class TestCase:
     max_calls: dict[str, int] = field(default_factory=dict)
 
 
+def make_qrcode(data: str) -> str:
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.ERROR_CORRECT_L,
+        border=2
+    )
+    qr.add_data(data)
+    qr.make(True)
+
+    matrix: list[list[bool]] = qr.get_matrix()
+    result: str = ""
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            result += "1" if matrix[i][j] else "0"
+    return result
+
+
+def load_as_bytes(filename: str) -> bytes:
+    with open(file="test_files/" + filename + ".bytes", mode="rb") as f:
+        return f.read()
+
+
+def test_colorprint(test_file: str, value: str) -> bool:
+    test_value: bytes = load_as_bytes(test_file)
+    return test_value == value.encode("utf-8")
+
+
 def generate() -> list[TestCase]:
     result: list[TestCase] = []
-    list_data = [
-        (5, 0, 10),
-        (8, 0, 100),
-        (10, 0, 10_000),
-        (10, -(10 ** 30), 10 ** 30),
-        (15, 0, 1),
-        (1_000, -10, 10)
-    ]
 
-    def create_validator(original_copy: list[int], passed_in_arg: list[int]) -> Callable[[Any], bool]:
-        def validator(actual_return: Any) -> bool:
-            if actual_return is None:
-                return False
-            if actual_return != sorted(original_copy):
-                return False
-            if passed_in_arg != original_copy:
-                return False
-            return True
-        return validator
-
-    for list_length, min_range, max_range in list_data:
-        random_data = [random.randint(min_range, max_range) for _ in range(list_length)]
-        original_copy = list(random_data)
-        mutable_arg = list(random_data)
-
-        result.append(
-            TestCase(
-                name=f"bubble_sort (délka {list_length})",
-                func="bubble_sort",
-                args=(mutable_arg,),
-                expected_return=create_validator(original_copy, mutable_arg),
-                timeout=5.0 if list_length == 1_000 else 2.0
-            )
-        )
-
-    edge_cases = [
-        ([], "prázdný seznam"),
-        ([1, 2, 3, 4, 5], "již seřazený seznam"),
-        ([5, 4, 3, 2, 1], "obráceně seřazený"),
-        ([42, 42, 42, 42], "stejné hodnoty")
-    ]
-
-    for edge_data, desc in edge_cases:
-        original_copy = list(edge_data)
-        mutable_arg = list(edge_data)
-        result.append(
-            TestCase(
-                name=f"bubble_sort ({desc})",
-                func="bubble_sort",
-                args=(mutable_arg,),
-                expected_return=create_validator(original_copy, mutable_arg)
-            )
-        )
+    result.extend([
+        TestCase(
+            name="hello_world_green",
+            func="hello_world_green",
+            verify_print=lambda x: test_colorprint("hello_world_green", x)
+        ),
+        TestCase(
+            name="censor_print() příklad ze zadání",
+            func="censor_print",
+            args=("Hello world!", ["Hell"]),
+            expected_return=1,
+            verify_print=lambda x: test_colorprint("censor_print_hello_world", x)
+        ),
+        TestCase(
+            name="censor_print() delší zpráva",
+            func="censor_print",
+            args=("Přísně tajný projekt X-42 byl včera přesunut do oblasti 51. Heslo k trezoru je modrý banán.",
+                  ["tajný", "X-42", "oblasti 51", "modrý banán"]),
+            expected_return=4,
+            verify_print=lambda x: test_colorprint("censor_print_tajny_projekt", x)
+        ),
+        TestCase(
+            name="print_qrcode() #1",
+            func="print_qrcode",
+            args=(make_qrcode("https://theuselessweb.com"),),
+            verify_print=lambda x: test_colorprint("theuselessweb.com", x)
+        ),
+        TestCase(
+            name="print_qrcode() #2",
+            func="print_qrcode",
+            args=(make_qrcode("https://pointerpointer.com"),),
+            verify_print=lambda x: test_colorprint("pointerpointer.com", x)
+        ),
+        TestCase(
+            name="print_qrcode() #3",
+            func="print_qrcode",
+            args=(make_qrcode("https://hackertyper.com"),),
+            verify_print=lambda x: test_colorprint("hackertyper.com", x)
+        ),
+    ])
 
     return result
 
 
 def generate_bonus() -> list[TestCase]:
     result: list[TestCase] = []
-    to_search_short_odd_len = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    to_search_short_even_len = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    result.extend([
-        TestCase(
-            name="linear_search první prvek",
-            func="linear_search",
-            args=(to_search_short_odd_len, 1),
-            expected_return=True
-        ),
-        TestCase(
-            name="linear_search prostřední prvek",
-            func="linear_search",
-            args=(to_search_short_odd_len, 5),
-            expected_return=True
-        ),
-        TestCase(
-            name="linear_search poslední prvek",
-            func="linear_search",
-            args=(to_search_short_odd_len, 9),
-            expected_return=True
-        ),
-        TestCase(
-            name="linear_search chybějící prvek",
-            func="linear_search",
-            args=(to_search_short_odd_len, 10),
-            expected_return=False
-        ),
-        TestCase(
-            name="linear_search chybějící prvek",
-            func="linear_search",
-            args=(to_search_short_odd_len, 0),
-            expected_return=False
-        )
-    ])
-    result.extend([
-        TestCase(
-            name="binary_search první prvek (lichá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_odd_len, 1),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search prostřední prvek (lichá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_odd_len, 5),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search poslední prvek (lichá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_odd_len, 9),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search chybějící prvek (lichá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_odd_len, 10),
-            expected_return=False
-        ),
-        TestCase(
-            name="binary_search chybějící prvek (lichá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_odd_len, 0),
-            expected_return=False
-        ),
-        TestCase(
-            name="binary_search první prvek (sudá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_even_len, 1),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search prostřední prvek (sudá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_even_len, 5),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search poslední prvek (sudá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_even_len, 9),
-            expected_return=True
-        ),
-        TestCase(
-            name="binary_search chybějící prvek (sudá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_even_len, 11),
-            expected_return=False
-        ),
-        TestCase(
-            name="binary_search chybějící prvek (sudá délka seznamu)",
-            func="binary_search",
-            args=(to_search_short_even_len, 0),
-            expected_return=False
-        )
-    ])
-    should_success = random.choice([True, False])
-    target = random.randint(450_000_000, 550_000_000)
-    to_search_large = range(target + 1 if should_success else target - 1)
-    result.append(TestCase(
-        name="binary_search efektivita",
-        func="binary_search",
-        args=(to_search_large, target),
-        expected_return=should_success
-    ))
     return result

@@ -98,7 +98,9 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         "collections",
         "time"
     }
-    extra: set[str] = {}  # type: ignore
+    extra: set[str] = {
+        "colorama", "qrcode"
+    }  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
 
     for node in ast.walk(tree):
