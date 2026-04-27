@@ -79,12 +79,9 @@ Implementujte funkci, `censor_print(to_print, censored_words)`, která vypíše 
 
 Požadované chování:
 ```py
-print(censor_print("Hello world", ["Hell"]))
+print(censor_print("Hello world!", ["Hell"]))
 ```
-Výstup:<br>
-<code>
-<span style="color: red">****</span>o world<br>1
-</code>
+by vypsalo čtyři červené hvězdičky, protože to nahradilo zacenzurovalo Hell v Hello world! a vrátilo 1, protože to nahradilo jeden výskyt ze seznamu zakázaných slov.
 ___
 Budete k tomu potřebovat funkce `string.replace(old, new)` a `string.count(substr)`. Funkce `replace` nahradí ve stringu všechny výskyty `old` za `new`. Funkce `count` zase vrátí počet výskytů `substr` ve stringu.
 
