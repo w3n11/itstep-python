@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 04: Barvičky
+# Python Intermediate - Lekce 05: Soubory
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
@@ -38,41 +38,38 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 Svá řešení pište do souboru `assignment.py`.
 
-### 1. Barevné hello world
-Implementujte funkci `hello_world_green()`, která pomocí knihovny `colorama` vypíše zeleně `Hello world`.
+### 1. Hello world v souboru
+Implementujte funkci `hello_world_to_file()`, která zapíše do souboru `hello_world.txt` řetězec `Hello world`.
 
-Při používání knihovny `colorama` můžete přímo ve funkci print používat takzvané `ANSI escape sekvence`. To jsou speciálně navržené skupiny znaků, které mění barvu pozadí a textu. Například `\033[31mČervená\033[0m` vypíše <span style="color: red">Červená</span>. Abyste ale nemuseli dohledávat kódy pro jednotlivé styly, `colorama` to řeší za vás.
+Práce se soubory je vcelku přímočará. Pomocí funkce `open()` získáte objekt souboru. Nutné jsou ale tři parametry:
+- `file`
+- `mode`
+- `encoding`
 
-Pro vypsání <span style="color: red">Červená</span> vám tak stačí jen
+`file` je cesta k souboru. Pokud budete chtít vytvořit soubor `hello_world.txt` ve stejném adresáři, stačí samotný název. Pokud jej budete chtít vytvořit v podsložce, musíte napsat `jmeno_slozky/hello_world.txt`.
+
+Pomocí parametru `mode` říkáme operačnímu systému, jak nám má soubor otevřít, případně pomocí `b` navíc Pythonu, že budeme číst/zapisovat bajty. Máte šest základních možností:
+- `"r"` - otevřít pro čtení v textovém režimu
+- `"w"` - otevřít pro zápis v textovém režimu
+- `"a"` - otevřít pro zápis na konec souboru v textovém režimu
+- `"rb"` - otevřít pro čtení bajtů
+- `"wb"` - otevřít pro zápis bajtů
+- `"ab"` - otevřít pro zápis bajtů na konec souboru
+
+Nakonec pomocí parametru `encoding` nastaveném na hodnotu `"utf-8"` zajistíme kompatibilitu souborů napříč systémy. Tato volba je nutná pouze v textovém režimu. Ona vlastně není ani tak nutná, ale silně doporučená.
+
+> Je to proto, že počítače znají jen jedničky a nuly - v počítači je všechno vyjádřeno číslem. Proto existují kódování (endoding). Můžete si to představit jako takové "překladové slovníky" z čísel na znaky.
+
+Jak na to v kódu? Pomocí nám nové konstrukce `with/as`:
 ```py
-1 | import colorama
-2 |
-3 | colorama.init(autoreset=True)
-4 | print(colorama.Fore.RED + "Červená")
-5 | 
-6 | colorama.deinit()
+# Otevřeme soubor v módu pro zápis ("w") a pojmenujeme si ho 'file'
+with open("hello_world.txt", "w", encoding="utf-8") as file:
+    # Vše, co je odsazené, se děje se souborem
+    file.write("Hello world")
+    
+# Jakmile odsazení skončí, Python soubor sám zavře a bezpečně uloží!
 ```
-Na řádku 1 importujeme knihovnu `colorama`, abychom ji mohli používat.
-
-Na třetím řádku pak inicializujeme/spustíme překlad a vykonávání jednotlivých ANSI escape sekvencí. Argument `autoreset` pak slouží k tomu, abyste po každém zavolání nemuseli barvy resetovat, protože bez resetování by se vykreslovalo vše červeně až do další změny barvy.
-
-Na čtvrtém řádku pak vypíšeme `Červená` spolu s "požadavkem" na červené popředí.
-
-Na posledním řádku pak preventivně deinicializujeme/vypneme vykonávání ANSI escape sekvencí pro zamezení nežádoucích účinků. Obecně není tento krok potřeba, ale je dobrou praxí všechny alokované zdroje po ukončení práce uvolnit a pokud to nebylo záměrem, vrátit pracovní prostředí do původního stavu.
-
-Kódy knihovny `colorama` se používají následovně:
-- `colorama.Fore.KÓD_BARVY` mění barvu popředí, resp. písma (**FORE**ground)
-- `colorama.Back.KÓD_BARVY` mění barvu pozadí (**BACK**ground)
-
-Za `KÓD_BARVY` dosaďte jednu z následujících možností:
-- <span style="color: red">RED</span>
-- <span style="color: blue">BLUE</span>
-- <span style="color: green">GREEN</span>
-- <span style="color: yellow">YELLOW</span>
-- <span style="color: cyan">CYAN</span>
-- <span style="color: magenta">MAGENTA</span>
-- <span style="color: white">WHITE</span>
-- <span style="color: black">BLACK</span> (← BLACK)
+Jakmile se odskočí zpět na úroveň klíčového slova `with`, Python soubor zavře.
 
 ### 2. Cenzurování výstupu
 Implementujte funkci, `censor_print(to_print, censored_words)`, která vypíše řetězec `to_print: str`, ale ještě před vypsáním v něm nahradí slova z `censored_words: list[str]` červenými hvězdičkami. Počet hvězdiček by měl odpovídat počtu písmen v jednotlivých nahrazovaných slovech. Funkce vrátí počet takto nahrazených slov.
