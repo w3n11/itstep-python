@@ -62,59 +62,76 @@ Nakonec pomocí parametru `encoding` nastaveném na hodnotu `"utf-8"` zajistíme
 
 Jak na to v kódu? Pomocí nám nové konstrukce `with/as`:
 ```py
-# Otevřeme soubor v módu pro zápis ("w") a pojmenujeme si ho 'file'
+# Otevřeme soubor v módu pro zápis ("w") a uložíme do proměnné 'file'.
 with open("hello_world.txt", "w", encoding="utf-8") as file:
     # Vše, co je odsazené, se děje se souborem
     file.write("Hello world")
     
-# Jakmile odsazení skončí, Python soubor sám zavře a bezpečně uloží!
+# Jakmile odsazení skončí, Python soubor sám zavře a bezpečně uloží.
+# Po skončení odsazení už neexistuje proměnná 'file'.
 ```
 Jakmile se odskočí zpět na úroveň klíčového slova `with`, Python soubor zavře.
 
-### 2. Cenzurování výstupu
-Implementujte funkci, `censor_print(to_print, censored_words)`, která vypíše řetězec `to_print: str`, ale ještě před vypsáním v něm nahradí slova z `censored_words: list[str]` červenými hvězdičkami. Počet hvězdiček by měl odpovídat počtu písmen v jednotlivých nahrazovaných slovech. Funkce vrátí počet takto nahrazených slov.
+### 2. Čtení a číslování řádků
 
-Požadované chování:
-```py
-print(censor_print("Hello world", ["Hell"]))
-```
-Výstup:<br>
-<code>
-<span style="color: red">****</span>o world<br>1
-</code>
-___
-Budete k tomu potřebovat funkce `string.replace(old, new)` a `string.count(substr)`. Funkce `replace` nahradí ve stringu všechny výskyty `old` za `new`. Funkce `count` zase vrátí počet výskytů `substr` ve stringu.
+Implementujte funkci `read_and_order(filename: str) -> None`, která otevře soubor, jehož název dostane v parametru, a vypíše jeho obsah do terminálu tak, že každý řádek očísluje (od jedničky).
 
-Příklad použití funkcí:
-```py
-my_string = "Hello world"
-print(my_string.count("l"))  # 3
-print(my_string.count("Hello"))  # 1
-
-my_string = my_string.replace("Hell", "Heaven")
-print(my_string)  # Heaveno world
-
-print(my_string.count("l"))  # 1
-print(my_string.count("Hello"))  # 0
+Příklad výstupu:
+```pt
+1. První řádek
+2. Druhý řádek
+3. Třetí řádek
 ```
 
-### 3. QR kód
-Implementujte funkci `print_qr(data: str)`, která vypíše do terminálu QR kód. Na vstupu dostanete data QR kódu v argumentu `data`. Ten sestává z jedniček a nul (`00010100101001110111010110...`) Tato data reprezentují QR kód.
+💡 **Nápověda:** Soubor otevřete v režimu pro čtení (`"r"`). Abyste získali jednotlivé řádky, můžete načíst celý obsah pomocí `file.read()` a ten následně rozdělit do seznamu pomocí metody `.splitlines()`. Přes tento seznam pak můžete iterovat pomocí cyklu `for` a funkce `range()`.
 
-Vaím úkolem bude tato data reprezentovat v bílých (`0`) a černých (`1`) pixelech. Zamyslete se nad tím, jak určíte velikost QR kódu.
+### 3. Náhodná čísla do souboru
 
-Chcete-li, můžete si ze souboru `tests.py` vykopírovat funkci `make_qrcode()` a testovat si sami.
+Implementujte funkci `random_numbers_to_file(count: int)`, která do souboru `random_numbers.txt` vygeneruje a zapíše zadaný počet (`count`) náhodných čísel od 1 do 100. Každé číslo bude na novém řádku.
 
-### 4. Volné zadání
-Naprogramujte sami nějaký kraťoučký projekt, klidně jednu zajímavou či užitečnou funkci, která využívá knihovnu `colorama`.
+💡 **Nápověda**: Co se stane, když funkci zavoláte dvakrát po sobě? V režimu `"w"` se existující soubor vždy promaže a přepíše. Pokud byste chtěli obsah přidávat na konec (režim `"a"` - append), musíte nejprve zajistit promazání souboru ze starého testu.
 
-Nemáte-li nápad, naprogramujte funkci, která vypíše na červeném podkladu bílé písmeno X o zadané velikosti.
-![md_resources/cross.png](md_resources/cross.png)
+### 4. Unikátní náhodná čísla
+
+Implementujte funkci `unique_random_numbers_to_file(count: int)`, která funguje velmi podobně jako předchozí úkol. Bude ale zapisovat do souboru `unique_random_numbers.txt` a čísla se nesmí opakovat.
+
+💡 **Nápověda:**
+Vytvořte si prázdný seznam pomocnou proměnnou, ve které si budete ukládat již vygenerovaná čísla. Při každém novém losování zkontrolujte, zda náhodou už nebylo použito. Pokud ano, losujte znovu. (Tohle je extrémně neefektivní implementace, ale cílem tohoto cvičení je procvičit si práci s pomocnou proměnnou.)
+Aby se vám program nezacyklil v případě, že budete chtít vygenerovat 200 unikátních čísel z rozsahu 1-100, nastavte horní hranici losování dynamicky tak, aby nedošlo k zacyklení. (K zacyklení by došlo, kdybychom chtěli vygenerovat více než 100 čísel.)
+
+## 🌟 Bonusové úlohy
+
+Následující úlohy simulují reálný systém pro ukládání hesel. **NIKDY** však neukládejte reálná hesla v nešifrované podobě, jak je cílem v úlohách níže!
+
+### B1. Přihlašovací systém (Login)
+
+Implementujte funkci `simple_login(database: str = "accounts.txt") -> bool`.
+
+Funkce se zeptá uživatele na uživatelské jméno (pomocí `input()`) a heslo. Pro bezpečné zadání hesla použijte funkci `getpass("Password: ")` z importovaného modulu `getpass` – díky tomu nepůjdou znaky při psaní do terminálu vidět.
+
+Následně funkce otevře soubor database a ověří, zda v něm existuje odpovídající záznam.
+
+- Soubor obsahuje na každém řádku záznam ve formátu `uživatelské_jméno;heslo`. (Pro rozdělení řádku použijte `line.split(";", 1)`).
+
+- Pokud najdete shodu, vypište `Logged in.` a vraťte `True`.
+
+- Pokud projdete celý soubor a shoda se nenajde, vypište `Invalid credentials.` a vraťte `False`.
+
+### B2. Registrační systém (Register)
+
+Implementujte funkci `simple_register(database: str = "accounts.txt") -> bool`.
+
+Funkce požádá o `username` přes běžný input, a následně dvakrát o `password`  přes `getpass()`.
+
+- Kontrola hesel: Pokud se obě zadaná hesla neshodují, vypište `Passwords do not match.` a vraťte `False`.
+
+- Kontrola duplicity: Otevřete soubor pro čtení (`"r"`). Pokud již uživatelské jméno v databázi existuje, vypište `Username already exists.` a vraťte `False`.
+
+- Zápis: Pokud je vše v pořádku, otevřete soubor pro přidávání (`"a"`) a na nový řádek zapište jméno a heslo oddělené středníkem (`jmeno;heslo\n`). Vypište `Account created.` a vraťte `True`.
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
-* `colorama`
-* `qrcode`
+* `getpass`
 * `collections` *(default)* 
 * `datetime` *(default)*
 * `math` *(default)*
