@@ -77,6 +77,9 @@ commands_dict["F"](100)  # Uvede do pohybu funkci t.forward s argumentem 100
 
 - Pokud narazíte na prázdný příkaz (například pokud by za sebou byla dvě svislítka `||`), jednoduše ho přeskočte např. klíčovým slovem `continue`.
 
+### ❔ Nehodnocená úloha: Kódování obrázku
+Zvládli byste v tuto chvíli už zakódovat obrázek do souboru, klidně v textové podobě?
+
 ---
 **📦 Povolené moduly v dnešní lekci:**
 * `turtle`
