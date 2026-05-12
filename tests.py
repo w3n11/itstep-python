@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field
 import random  # noqa: F401
 from typing import Any, Callable, Union
-import qrcode
 import os
+import turtle
+from typing import Callable
+from PIL import Image, ImageGrab, ImageChops
+import math
+import time
 
 
 @dataclass
@@ -53,249 +57,213 @@ def delete_file(filepath: str) -> Callable[[], None]:
     return _teardown
 
 
-def numbers_between_1_and_100(lines: list[str]) -> bool:
-    for line in lines:
-        try:
-            if int(line) < 1 or int(line) > 100:
-                return False
-        except ValueError:
-            return False
-    return True
-
-
-def numbers_between_1_and_200(lines: list[str]) -> bool:
-    for line in lines:
-        try:
-            if int(line) < 1 or int(line) > 200:
-                return False
-        except ValueError:
-            return False
-    return True
-
-
-def get_file_content(path: str) -> str:
-    try:
-        with open(file=path, mode="r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return ""
+def turtle_headless_setup():
+    turtle.tracer(0, 0)
+    turtle.Screen().cv.winfo_toplevel().withdraw()
 
 
 def generate() -> list[TestCase]:
     result: list[TestCase] = []
-
+    
     result.extend([
         TestCase(
-            name="Hello world v souboru",
-            func="hello_world_in_file",
-            file_validators={
-                "hello_world.txt": validate_exact_text("Hello World\n")
+            name="Základní příkaz: forward",
+            func="turtle_from_file",
+            args=("test_files/forward.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 1,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 0,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 0,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 0
             },
-            teardown=delete_file("hello_world.txt")
+            required_calls={
+                "turtle.Turtle.forward": 1
+            }
         ),
         TestCase(
-            name="Číslování řádků",
-            func="read_and_order",
-            args=("test_files/words.txt",),
-            expected_print=get_file_content("test_files/words_ordered.txt")
+            name="Základní příkaz: backward",
+            func="turtle_from_file",
+            args=("test_files/backward.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 0,
+                "turtle.Turtle.backward": 1,
+                "turtle.Turtle.left": 0,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 0,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 0
+            },
+            required_calls={
+                "turtle.Turtle.backward": 1
+            }
         ),
         TestCase(
-            name="5 náhodných čísel v souboru",
-            func="random_numbers_to_file",
-            args=(5,),
-            file_validators={
-                "random_numbers.txt": lambda filepath: (
-                    validate_lines(numbers_between_1_and_100)(filepath) and 
-                    validate_lines(lambda lines: len(lines) == 5)(filepath)
-                )
+            name="Základní příkaz: left",
+            func="turtle_from_file",
+            args=("test_files/left.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 1,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 1,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 0,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 0
             },
-            teardown=delete_file("random_numbers.txt")
+            required_calls={
+                "turtle.Turtle.forward": 1,
+                "turtle.Turtle.left": 1
+            }
         ),
         TestCase(
-            name="100 náhodných čísel v souboru",
-            func="random_numbers_to_file",
-            args=(100,),
-            file_validators={
-                "random_numbers.txt": lambda filepath: (
-                    validate_lines(numbers_between_1_and_100)(filepath) and 
-                    validate_lines(lambda lines: len(lines) == 100)(filepath)
-                )
+            name="Základní příkaz: right",
+            func="turtle_from_file",
+            args=("test_files/right.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 1,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 0,
+                "turtle.Turtle.right": 1,
+                "turtle.Turtle.penup": 0,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 0
             },
-            teardown=delete_file("random_numbers.txt")
+            required_calls={
+                "turtle.Turtle.forward": 1,
+                "turtle.Turtle.right": 1
+            }
         ),
         TestCase(
-            name="10 náhodných unikátních čísel v souboru",
-            func="unique_random_numbers_to_file",
-            args=(10,),
-            file_validators={
-                "unique_random_numbers.txt": lambda filepath: (
-                    validate_lines(numbers_between_1_and_100)(filepath) and 
-                    validate_lines(lambda lines: len(lines) == 10)(filepath) and
-                    validate_lines(lambda lines: len(lines) == len(set(lines)))(filepath)
-                )
+            name="Základní příkaz: penup",
+            func="turtle_from_file",
+            args=("test_files/penup.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 2,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 0,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 1,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 0
             },
-            teardown=delete_file("unique_random_numbers.txt")
+            required_calls={
+                "turtle.Turtle.forward": 2,
+                "turtle.Turtle.penup": 1
+            }
         ),
         TestCase(
-            name="100 náhodných unikátních čísel v souboru",
-            func="unique_random_numbers_to_file",
-            args=(100,),
-            file_validators={
-                "unique_random_numbers.txt": lambda filepath: (
-                    validate_lines(numbers_between_1_and_100)(filepath) and 
-                    validate_lines(lambda lines: len(lines) == 100)(filepath) and
-                    validate_lines(lambda lines: len(lines) == len(set(lines)))(filepath)
-                )
+            name="Základní příkaz: pendown",
+            func="turtle_from_file",
+            args=("test_files/pendown.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 3,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 0,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 1,
+                "turtle.Turtle.pendown": 1,
+                "turtle.Turtle.circle": 0
             },
-            teardown=delete_file("unique_random_numbers.txt")
+            required_calls={
+                "turtle.Turtle.forward": 3,
+                "turtle.Turtle.penup": 1,
+                "turtle.Turtle.pendown": 1
+            }
         ),
         TestCase(
-            name="200 náhodných unikátních čísel v souboru",
-            func="unique_random_numbers_to_file",
-            args=(200,),
-            file_validators={
-                "unique_random_numbers.txt": lambda filepath: (
-                    validate_lines(numbers_between_1_and_200)(filepath) and 
-                    validate_lines(lambda lines: len(lines) == 200)(filepath) and
-                    validate_lines(lambda lines: len(lines) == len(set(lines)))(filepath)
-                )
+            name="circles.turtledraw",
+            func="turtle_from_file",
+            args=("test_files/circles.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 0,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 36,
+                "turtle.Turtle.right": 0,
+                "turtle.Turtle.penup": 0,
+                "turtle.Turtle.pendown": 0,
+                "turtle.Turtle.circle": 36
             },
-            teardown=delete_file("unique_random_numbers.txt")
+            required_calls={
+                "turtle.Turtle.left": 36,
+                "turtle.Turtle.circle": 36
+            }
+        ),
+        TestCase(
+            name="squares.turtledraw",
+            func="turtle_from_file",
+            args=("test_files/squares.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 200,
+                "turtle.Turtle.backward": 5,
+                "turtle.Turtle.left": 225,
+                "turtle.Turtle.right": 25,
+                "turtle.Turtle.penup": 10,
+                "turtle.Turtle.pendown": 10,
+                "turtle.Turtle.circle": 0
+            },
+            required_calls={
+                "turtle.Turtle.forward": 200,
+                "turtle.Turtle.backward": 5,
+                "turtle.Turtle.left": 225,
+                "turtle.Turtle.right": 25,
+                "turtle.Turtle.penup": 10,
+                "turtle.Turtle.pendown": 10
+            }
+        ),
+        TestCase(
+            name="simple_house.turtledraw",
+            func="turtle_from_file",
+            args=("test_files/simple_house.turtledraw",),
+            setup=turtle_headless_setup,
+            max_calls={
+                "turtle.Turtle.forward": 85,
+                "turtle.Turtle.backward": 0,
+                "turtle.Turtle.left": 42,
+                "turtle.Turtle.right": 30,
+                "turtle.Turtle.penup": 15,
+                "turtle.Turtle.pendown": 15,
+                "turtle.Turtle.circle": 1
+            },
+            required_calls={
+                "turtle.Turtle.forward": 85,
+                "turtle.Turtle.left": 42,
+                "turtle.Turtle.right": 30,
+                "turtle.Turtle.penup": 15,
+                "turtle.Turtle.pendown": 15,
+                "turtle.Turtle.circle": 1
+            }
+        ),
+        TestCase(
+            name="Bez přípony .turtledraw",
+            func="turtle_from_file",
+            args=("test_files/withoutextension",),
+            setup=turtle_headless_setup,
+            expected_exception=ValueError
+        ),
+        TestCase(
+            name="Neexistující soubor .turtledraw",
+            func="turtle_from_file",
+            args=("test_files/nonexistent.turtledraw",),
+            setup=turtle_headless_setup,
+            expected_exception=FileNotFoundError
         )
     ])
     return result
 
-
 def generate_bonus() -> list[TestCase]:
-    result: list[TestCase] = [
-        TestCase(
-            name="Login - uživatel existuje (1. řádek)",
-            func="simple_login",
-            args=("test_database.txt",),
-            inputs=["admin", "heslo"],
-            expected_return=True,
-            expected_print="Logged in.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\n")
-            },
+    result: list[TestCase] = []
+    result.extend([
 
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Login - uživatel existuje (2. řádek)",
-            func="simple_login",
-            args=("test_database.txt",),
-            inputs=["admin", "heslo"],
-            expected_return=True,
-            expected_print="Logged in.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("luděk;nevim123\nadmin;heslo\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "luděk;nevim123\nadmin;heslo\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Login - uživatel neexistuje",
-            func="simple_login",
-            args=("test_database.txt",),
-            inputs=["anežka", "česká"],
-            expected_return=False,
-            expected_print="Invalid credentials.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("luděk;nevim123\nadmin;heslo\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "luděk;nevim123\nadmin;heslo\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Register - vytvoření účtu",
-            func="simple_register",
-            args=("test_database.txt",),
-            inputs=["hello", "world", "world"],
-            expected_return=True,
-            expected_print="Account created.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\nhello;world\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Register - neshodující se hesla",
-            func="simple_register",
-            args=("test_database.txt",),
-            inputs=["hello", "world", "word"],
-            expected_return=False,
-            expected_print="Passwords do not match.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Register - uživatel již existuje",
-            func="simple_register",
-            args=("test_database.txt",),
-            inputs=["luděk", "world", "world"],
-            expected_return=False,
-            expected_print="Username already exists.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt")
-        ),
-        TestCase(
-            name="Login - použití getpass",
-            func="simple_login",
-            args=("test_database.txt",),
-            inputs=["admin", "heslo"],
-            expected_return=True,
-            expected_print="Logged in.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt"),
-            required_calls={
-                "getpass.getpass": 1,
-                "builtins.input": 1
-            },
-            max_calls={
-                "getpass.getpass": 1,
-                "builtins.input": 1
-            },
-        ),
-        TestCase(
-            name="Register - použití getpass",
-            func="simple_register",
-            args=("test_database.txt",),
-            inputs=["hello", "world", "world"],
-            expected_return=True,
-            expected_print="Account created.\n",
-            file_validators={
-                "test_database.txt": validate_exact_text("admin;heslo\nluděk;nevim123\nhello;world\n")
-            },
-
-            setup=create_dummy_file("test_database.txt", "admin;heslo\nluděk;nevim123\n"),
-            teardown=delete_file("test_database.txt"),
-            required_calls={
-                "getpass.getpass": 2,
-                "builtins.input": 1
-            },
-            max_calls={
-                "getpass.getpass": 2,
-                "builtins.input": 1
-            }
-        ),
-        
-    ]
+    ])
     return result

@@ -101,7 +101,7 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         "time"
     }
     extra: set[str] = {
-        "getpass"
+        "turtle", "getpass"
     }  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
 
@@ -179,15 +179,26 @@ def run_test(test: tests.TestCase) -> TestResult:
                 else:
                     mock_getpass = stack.enter_context(patch("getpass.getpass", side_effect=shared_inputs))
 
-                for target, limit in test.max_calls.items():
+                targets_to_mock = set()
+                if hasattr(test, "max_calls") and test.max_calls:
+                    targets_to_mock.update(test.max_calls.keys())
+                if hasattr(test, "required_calls") and test.required_calls:
+                    targets_to_mock.update(test.required_calls.keys())
+
+                for target in targets_to_mock:
+                    limit = test.max_calls.get(target, sys.maxsize) if test.max_calls else sys.maxsize
+                    
                     if target == "builtins.input":
                         mock_trackers[target] = (mock_input, limit)
                     elif target == "getpass.getpass":
                         mock_trackers[target] = (mock_getpass, limit)
                     else:
-                        mod_name, func_name = target.rsplit(".", 1)
-                        orig_func = getattr(importlib.import_module(mod_name), func_name)
-                        mock_obj = stack.enter_context(patch(target=target, wraps=orig_func))
+                        parts = target.split(".")
+                        orig_func = importlib.import_module(parts[0])
+                        for part in parts[1:]:
+                            orig_func = getattr(orig_func, part)
+
+                        mock_obj = stack.enter_context(patch(target=target, wraps=orig_func, autospec=True))
                         mock_trackers[target] = (mock_obj, limit)
 
                 stack.enter_context(contextlib.redirect_stdout(program_output))

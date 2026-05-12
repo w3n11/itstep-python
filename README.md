@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 05: Soubory
+# Python Intermediate - Lekce 05: Pokročilejší práce se soubory
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
@@ -38,100 +38,48 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 Svá řešení pište do souboru `assignment.py`.
 
-### 1. Hello world v souboru
-Implementujte funkci `hello_world_to_file()`, která zapíše do souboru `hello_world.txt` řetězec `Hello world`.
+### 1. Želví instrukce ze souboru
 
-Práce se soubory je vcelku přímočará. Pomocí funkce `open()` získáte objekt souboru. Nutné jsou ale tři parametry:
-- `file`
-- `mode`
-- `encoding`
+Implementujte funkci `turtle_from_file(filepath: str) -> None`, která přečte speciální soubor s vykreslovacími příkazy a pomocí modulu turtle je vykreslí na obrazovku.
 
-`file` je cesta k souboru. Pokud budete chtít vytvořit soubor `hello_world.txt` ve stejném adresáři, stačí samotný název. Pokud jej budete chtít vytvořit v podsložce, musíte napsat `jmeno_slozky/hello_world.txt`.
+Náš nový formát souborů má příponu `.turtledraw`. Každý řádek v tomto souboru představuje instrukce pro jednu samostatnou želvu (pro každý řádek v souboru tedy vytvořte novou instanci `t = turtle.Turtle()`).
 
-Pomocí parametru `mode` říkáme operačnímu systému, jak nám má soubor otevřít, případně pomocí `b` navíc Pythonu, že budeme číst/zapisovat bajty. Máte šest základních možností:
-- `"r"` - otevřít pro čtení v textovém režimu
-- `"w"` - otevřít pro zápis v textovém režimu
-- `"a"` - otevřít pro zápis na konec souboru v textovém režimu
-- `"rb"` - otevřít pro čtení bajtů
-- `"wb"` - otevřít pro zápis bajtů
-- `"ab"` - otevřít pro zápis bajtů na konec souboru
+Postup a pravidla:
 
-Nakonec pomocí parametru `encoding` nastaveném na hodnotu `"utf-8"` zajistíme kompatibilitu souborů napříč systémy. Tato volba je nutná pouze v textovém režimu. Ona vlastně není ani tak nutná, ale silně doporučená.
+- Validace formátu: Hned na začátku zkontrolujte, zda parametr filepath končí na příponu .turtledraw. Pokud ne, vyvolejte výjimku pomocí příkazu `raise Value Error("Invalid file format.")`.
 
-> Je to proto, že počítače znají jen jedničky a nuly - v počítači je všechno vyjádřeno číslem. Proto existují kódování (endoding). Můžete si to představit jako takové "překladové slovníky" z čísel na znaky.
+- Načtení dat: Otevřete soubor pro čtení a získejte jednotlivé řádky.
 
-Jak na to v kódu? Pomocí nám nové konstrukce `with/as`:
-```py
-# Otevřeme soubor v módu pro zápis ("w") a uložíme do proměnné 'file'.
-with open("hello_world.txt", "w", encoding="utf-8") as file:
-    # Vše, co je odsazené, se děje se souborem
-    file.write("Hello world")
-    
-# Jakmile odsazení skončí, Python soubor sám zavře a bezpečně uloží.
-# Po skončení odsazení už neexistuje proměnná 'file'.
+- Zpracování řádků: Příkazy pro želvu jsou na každém řádku odděleny svislítkem `|` (tzv. pipe). Příklad jednoho řádku: `F100|R90|U|F50|D|C30|S50`.
+
+- Interpretace příkazu: Každý příkaz se skládá z jednoho písmene (akce) a volitelně z čísla (hodnoty). Hodnotu nezapomeňte převést na desetinné číslo (`float`).
+
+Podporované příkazy:
+
+- `F`, `B`, `L`, `R`, `C` – Základní pohyby želvy (`forward`, `backward`, `left`, `right`, `circle`) o danou hodnotu.
+
+- `U`, `D` – Zvednutí pera (`penup`) a položení pera (`pendown`). Tyto příkazy za sebou nemají žádné číslo.
+
+- `S` – Vykreslí čtverec (Square), jehož délka strany odpovídá dané hodnotě. Tento příkaz želva nativně neumí, musíte ho naprogramovat pomocí cyklu (4x jdi dopředu a zahni o 90 stupňů).
+
+💡 Nápovědy k implementaci:
+
+- Abyste nemuseli psát nekonečně dlouhou sérii podmínek if/elif pro každý jeden příkaz, můžete využít slovník (`dict`). Do slovníku si totiž můžete uložit přímo samotné funkce (bez závorek)!
+```python
+commands_dict = {
+    "F": t.forward,
+    "L": t.left
+}
+# A poté funkci zavolat jednoduše takto:
+commands_dict["F"](100)  # Uvede do pohybu funkci t.forward s argumentem 100
 ```
-Jakmile se odskočí zpět na úroveň klíčového slova `with`, Python soubor zavře.
+- Pro rozdělení příkazu na písmeno a číslo využijte slicing řetězců. První znak získáte jako `command[0]` a zbytek do konce řetězce získáte jako `command[1:]`. (Proměnná `command` zde představuje jeden příkaz, např. `F150`).
 
-### 2. Čtení a číslování řádků
-
-Implementujte funkci `read_and_order(filename: str) -> None`, která otevře soubor, jehož název dostane v parametru, a vypíše jeho obsah do terminálu tak, že každý řádek očísluje (od jedničky).
-
-Příklad výstupu:
-```pt
-1. První řádek
-2. Druhý řádek
-3. Třetí řádek
-```
-
-💡 **Nápověda:** Soubor otevřete v režimu pro čtení (`"r"`). Abyste získali jednotlivé řádky, můžete načíst celý obsah pomocí `file.read()` a ten následně rozdělit do seznamu pomocí metody `.splitlines()`. Přes tento seznam pak můžete iterovat pomocí cyklu `for` a funkce `range()`.
-
-### 3. Náhodná čísla do souboru
-
-Implementujte funkci `random_numbers_to_file(count: int)`, která do souboru `random_numbers.txt` vygeneruje a zapíše zadaný počet (`count`) náhodných čísel od 1 do 100. Každé číslo bude na novém řádku.
-
-💡 **Nápověda**: Co se stane, když funkci zavoláte dvakrát po sobě? V režimu `"w"` se existující soubor vždy promaže a přepíše. Pokud byste chtěli obsah přidávat na konec (režim `"a"` - append), musíte nejprve zajistit promazání souboru ze starého testu.
-
-### 4. Unikátní náhodná čísla
-
-Implementujte funkci `unique_random_numbers_to_file(count: int)`, která funguje velmi podobně jako předchozí úkol. Bude ale zapisovat do souboru `unique_random_numbers.txt` a čísla se nesmí opakovat.
-
-💡 **Nápověda:**
-Vytvořte si prázdný seznam pomocnou proměnnou, ve které si budete ukládat již vygenerovaná čísla. Při každém novém losování zkontrolujte, zda náhodou už nebylo použito. Pokud ano, losujte znovu. (Tohle je extrémně neefektivní implementace, ale cílem tohoto cvičení je procvičit si práci s pomocnou proměnnou.)
-Aby se vám program nezacyklil v případě, že budete chtít vygenerovat 200 unikátních čísel z rozsahu 1-100, nastavte horní hranici losování dynamicky tak, aby nedošlo k zacyklení. (K zacyklení by došlo, kdybychom chtěli vygenerovat více než 100 čísel.)
-
-## 🌟 Bonusové úlohy
-
-Následující úlohy simulují reálný systém pro ukládání hesel. **NIKDY** však neukládejte reálná hesla v nešifrované podobě, jak je cílem v úlohách níže!
-
-### B1. Přihlašovací systém (Login)
-
-Implementujte funkci `simple_login(database: str = "accounts.txt") -> bool`.
-
-Funkce se zeptá uživatele na uživatelské jméno (pomocí `input()`) a heslo. Pro bezpečné zadání hesla použijte funkci `getpass("Password: ")` z importovaného modulu `getpass` – díky tomu nepůjdou znaky při psaní do terminálu vidět.
-
-Následně funkce otevře soubor database a ověří, zda v něm existuje odpovídající záznam.
-
-- Soubor obsahuje na každém řádku záznam ve formátu `uživatelské_jméno;heslo`. (Pro rozdělení řádku použijte `line.split(";", 1)`).
-
-- Pokud najdete shodu, vypište `Logged in.` a vraťte `True`.
-
-- Pokud projdete celý soubor a shoda se nenajde, vypište `Invalid credentials.` a vraťte `False`.
-
-### B2. Registrační systém (Register)
-
-Implementujte funkci `simple_register(database: str = "accounts.txt") -> bool`.
-
-Funkce požádá o `username` přes běžný input, a následně dvakrát o `password`  přes `getpass()`.
-
-- Kontrola hesel: Pokud se obě zadaná hesla neshodují, vypište `Passwords do not match.` a vraťte `False`.
-
-- Kontrola duplicity: Otevřete soubor pro čtení (`"r"`). Pokud již uživatelské jméno v databázi existuje, vypište `Username already exists.` a vraťte `False`.
-
-- Zápis: Pokud je vše v pořádku, otevřete soubor pro přidávání (`"a"`) a na nový řádek zapište jméno a heslo oddělené středníkem (`jmeno;heslo\n`). Vypište `Account created.` a vraťte `True`.
+- Pokud narazíte na prázdný příkaz (například pokud by za sebou byla dvě svislítka `||`), jednoduše ho přeskočte např. klíčovým slovem `continue`.
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
-* `getpass`
+* `turtle`
 * `collections` *(default)* 
 * `datetime` *(default)*
 * `math` *(default)*
