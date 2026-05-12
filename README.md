@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 05: Pokročilejší práce se soubory
+# Python Intermediate - Lekce 06: Pokročilejší práce se soubory
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
