@@ -3,10 +3,6 @@ import random  # noqa: F401
 from typing import Any, Callable, Union
 import os
 import turtle
-from typing import Callable
-from PIL import Image, ImageGrab, ImageChops
-import math
-import time
 
 
 @dataclass
@@ -35,6 +31,7 @@ def validate_exact_text(expected_content: str) -> Callable[[str], bool]:
             return f.read() == expected_content
     return validator
 
+
 def validate_lines(condition: Callable[[list[str]], bool]) -> Callable[[str], bool]:
     def validator(filepath: str) -> bool:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -51,7 +48,6 @@ def create_dummy_file(filepath: str, content: str) -> Callable[[], None]:
 
 def delete_file(filepath: str) -> Callable[[], None]:
     def _teardown():
-        import os
         if os.path.exists(filepath):
             os.remove(filepath)
     return _teardown
@@ -64,7 +60,7 @@ def turtle_headless_setup():
 
 def generate() -> list[TestCase]:
     result: list[TestCase] = []
-    
+
     result.extend([
         TestCase(
             name="Základní příkaz: forward",
@@ -260,6 +256,7 @@ def generate() -> list[TestCase]:
         )
     ])
     return result
+
 
 def generate_bonus() -> list[TestCase]:
     result: list[TestCase] = []

@@ -11,7 +11,6 @@ import tests
 from typing import Any
 import importlib
 import os
-import types
 
 
 class TimeoutException(BaseException):
@@ -187,7 +186,7 @@ def run_test(test: tests.TestCase) -> TestResult:
 
                 for target in targets_to_mock:
                     limit = test.max_calls.get(target, sys.maxsize) if test.max_calls else sys.maxsize
-                    
+
                     if target == "builtins.input":
                         mock_trackers[target] = (mock_input, limit)
                     elif target == "getpass.getpass":
@@ -225,14 +224,14 @@ def run_test(test: tests.TestCase) -> TestResult:
                 for target, required_count in test.required_calls.items():
                     mock_obj, _ = mock_trackers.get(target, (None, 0))
                     actual_count = mock_obj.call_count if mock_obj else 0
-                    
+
                     if actual_count < required_count:
                         log(f"[FAIL] {test.name} (Nepoužili jste požadovanou funkci)", InputColor.ERROR)
                         replaced: str = target.replace("builtins.", "")
                         log(f"       Funkci '{replaced}' musíte zavolat alespoň {required_count}x.", InputColor.WARNING)
                         log(f"       Zavolali jste ji pouze {actual_count}x.", InputColor.WARNING)
                         return TestResult.FAIL
-            
+
         except StopIteration:
             log(f"[FAIL] {test.name} (Deadlock)", InputColor.ERROR)
             log("       Zavolali jste funkci input() vícekrát, než bylo nutné.", InputColor.WARNING)
