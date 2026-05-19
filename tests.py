@@ -192,15 +192,15 @@ def generate(seed: int | None = None) -> list[TestCase]:
         TestCase(
             name="Šifrování souboru",
             func="my_encrypt_file",
-            setup=create_dummy_file("test_files/to_encrypt", "hello world"),
+            setup=create_dummy_file("to_encrypt", "hello world"),
             teardown=[
-                delete_file("test_files/to_encrypt"),
-                delete_file("test_files/to_encrypt.enc")
+                delete_file("to_encrypt"),
+                delete_file("to_encrypt.enc")
                 ],
             file_validators={
-                "test_files/to_encrypt.enc": validate_exact_text(args.ciphertext)  # type: ignore
+                "to_encrypt.enc": validate_exact_text(args.ciphertext)  # type: ignore
             },
-            args=("test_files/to_encrypt", args.key)  # type: ignore
+            args=("to_encrypt", args.key)  # type: ignore
         )
     )
     args = LazyArgs("hello world", 1)
@@ -208,15 +208,15 @@ def generate(seed: int | None = None) -> list[TestCase]:
         TestCase(
             name="Dešifrování souboru",
             func="my_decrypt_file",
-            setup=create_dummy_file("test_files/to_decrypt.enc", args.ciphertext),  # type: ignore
+            setup=create_dummy_file("to_decrypt.enc", args.ciphertext),  # type: ignore
             teardown=[
-                delete_file("test_files/to_decrypt"),
-                delete_file("test_files/to_decrypt.enc")
+                delete_file("to_decrypt"),
+                delete_file("to_decrypt.enc")
                 ],
             file_validators={
-                "test_files/to_decrypt": validate_exact_text(args.plaintext)
+                "to_decrypt": validate_exact_text(args.plaintext)
             },
-            args=("test_files/to_decrypt.enc", args.key)  # type: ignore
+            args=("to_decrypt.enc", args.key)  # type: ignore
         )
     )
     for i in range(3):
@@ -227,15 +227,15 @@ def generate(seed: int | None = None) -> list[TestCase]:
             TestCase(
                 name=f"Zátěžový test šifrování souboru #{i + 1}",
                 func="my_encrypt_file",
-                setup=create_dummy_file("test_files/tmp", plaintext),
+                setup=create_dummy_file("tmp", plaintext),
                 teardown=[
-                    delete_file("test_files/tmp"),
-                    delete_file("test_files/tmp.enc")
+                    delete_file("tmp"),
+                    delete_file("tmp.enc")
                     ],
                 file_validators={
-                    "test_files/tmp.enc": validate_exact_text(args.ciphertext)  # type: ignore
+                    "tmp.enc": validate_exact_text(args.ciphertext)  # type: ignore
                 },
-                args=("test_files/tmp", args.key)  # type: ignore
+                args=("tmp", args.key)  # type: ignore
             )
         )
     for i in range(3):
@@ -246,15 +246,15 @@ def generate(seed: int | None = None) -> list[TestCase]:
             TestCase(
                 name=f"Zátěžový test dešifrování souboru #{i + 1}",
                 func="my_decrypt_file",
-                setup=create_dummy_file("test_files/tmp.enc", args.ciphertext),  # type: ignore
+                setup=create_dummy_file("tmp.enc", args.ciphertext),  # type: ignore
                 teardown=[
-                    delete_file("test_files/tmp"),
-                    delete_file("test_files/tmp.enc")
+                    delete_file("tmp"),
+                    delete_file("tmp.enc")
                     ],
                 file_validators={
-                    "test_files/tmp": validate_exact_text(args.plaintext)
+                    "tmp": validate_exact_text(args.plaintext)
                 },
-                args=("test_files/tmp.enc", args.key)  # type: ignore
+                args=("tmp.enc", args.key)  # type: ignore
             )
         )
     return result
