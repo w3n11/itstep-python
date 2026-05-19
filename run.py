@@ -11,6 +11,8 @@ import tests
 from typing import Any
 import importlib
 import os
+import random
+from argparse import ArgumentParser
 
 
 class TimeoutException(BaseException):
@@ -100,7 +102,7 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         "time"
     }
     extra: set[str] = {
-        "turtle", "getpass"
+        "turtle", "getpass", "difflib"
     }  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
 
@@ -173,8 +175,10 @@ def run_test(test: tests.TestCase) -> TestResult:
                 shared_inputs = iter(test.inputs)
 
                 mock_input = stack.enter_context(patch("builtins.input", side_effect=shared_inputs))
-                if hasattr(assignment, "getpass") and not isinstance(assignment.getpass, types.ModuleType):
-                    mock_getpass = stack.enter_context(patch.object(assignment, "getpass", side_effect=shared_inputs))
+                if hasattr(assignment, "getpass"):
+                    if not isinstance(assignment.getpass, types.ModuleType):  # type: ignore
+                        mock_getpass = stack.enter_context(patch.object(assignment, "getpass",
+                                                                        side_effect=shared_inputs))
                 else:
                     mock_getpass = stack.enter_context(patch("getpass.getpass", side_effect=shared_inputs))
 
@@ -390,7 +394,7 @@ def run_tests():
     log("\n[INFO] Spouštím testy...", InputColor.INFO)
 
     # --- TEST DEFINITIONS START ---
-    test_cases: list[tests.TestCase] = tests.generate()
+    test_cases: list[tests.TestCase] = tests.generate(SEED)
     # --- TEST DEFINITIONS END ---
 
     tests_total: int = len(test_cases)
@@ -429,6 +433,7 @@ def run_tests():
 
     log("\n" + divider("📊 VÝSLEDKY TESTŮ") + "\n", InputColor.INFO)
 
+    log(f" Semínko:         {SEED}", InputColor.BASE)
     log(f" Uplynulý čas:    {elapsed_time:.2f}s", InputColor.BASE)
     log(f" Celkem testů:    {tests_total}\n", InputColor.BASE)
 
@@ -455,7 +460,7 @@ def run_tests():
     print()
 
     if tests_total == tests_passed and tests_total > 0:
-        test_cases_bonus: list[tests.TestCase] = tests.generate_bonus()
+        test_cases_bonus: list[tests.TestCase] = tests.generate_bonus(SEED)
         bonus_success: bool = True
         if len(test_cases_bonus) > 0:
             log(divider("BONUSOVÉ TESTY") + "\n", InputColor.INFO)
@@ -485,4 +490,13 @@ def run_tests():
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("seed", type=int, nargs="?", default=None)
+    args = parser.parse_args()
+    if args.seed is None:
+        SEED = random.randint(0, 2 ** 24 - 1)
+        random.seed(SEED)
+    else:
+        SEED = args.seed
+
     run_tests()

@@ -1,4 +1,4 @@
-# Python Intermediate - Lekce 06: Pokročilejší práce se soubory
+# Python Intermediate - Lekce 07: Kreativní okénko
 
 ## 📂 Struktura adresáře
 Budou vás zajímat jen tři soubory:
@@ -38,51 +38,42 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 Svá řešení pište do souboru `assignment.py`.
 
-### 1. Želví instrukce ze souboru
+### 1. Vaše vlastní šifrování
+Programování není jen o dodržování postupu. Občas je potřeba ten postup vymyslet. Proto bude vaším dnešním úkolem implementovat funkci `my_encrypt(plaintext: str, key: int) -> str`, která přijme řetězec a "zašifruje" ho a nový "zašifrovaný" řetězec vrátí.
 
-Implementujte funkci `turtle_from_file(filepath: str) -> None`, která přečte speciální soubor s vykreslovacími příkazy a pomocí modulu turtle je vykreslí na obrazovku.
+Slovo "zašifrovaný" je v uvozovkách schválně. Neočekávám, že implementujete šifrování odpovídající kryptografickým standardům - to by bylo nejspíš nemožné.
 
-Náš nový formát souborů má příponu `.turtledraw`. Každý řádek v tomto souboru představuje instrukce pro jednu samostatnou želvu (pro každý řádek v souboru tedy vytvořte novou instanci `t = turtle.Turtle()`).
+Můžete k "zašifrování" využít prakticky jakoukoliv operaci, ale nezapomeňte, že musí jít i dešifrovat. Jako klíč k šifrování můžete využít parametr `key` buď přímo jako číselnou hodnotu, nebo jako semínko náhodného generátoru pro generování klíče. Klíč bude při testech náhodně zvolen z rozsahu `0 - 4294967295`. Obyčejný `int` se může zdát limitující, ale pomocí knihovny `random` z něj můžete vytvořit například řetězec či seznam booleanů. Fantazii se meze nekladou.
 
-Postup a pravidla:
+Můžete se spolehnout na to, že během testů budou použita jen malá písmena anglické abecedy a mezery.
 
-- Validace formátu: Hned na začátku zkontrolujte, zda parametr filepath končí na příponu .turtledraw. Pokud ne, vyvolejte výjimku pomocí příkazu `raise Value Error("Invalid file format.")`.
+> 💡 *Pro inspiraci, můžete využít klasického posunu písmen o identické číslo pro všechna písmena (Caesarova šifra), nabo posouvání každého písmena o různý počet kroků (Vigenérova šifra), můžete taky vygenerovat klíč identicky dlouhý se šifrovaným textem (Vernamova šifra), měřit vzdálenost mezi písmeny (C - A = 2) a podobně...*
 
-- Načtení dat: Otevřete soubor pro čtení a získejte jednotlivé řádky.
+### 2. A nyní dešifrování
+Implementujte funkci `my_decrypt(ciphertext: str, key: int) -> str`, která vrátí "dešifrovaný" řetězec.
 
-- Zpracování řádků: Příkazy pro želvu jsou na každém řádku odděleny svislítkem `|` (tzv. pipe). Příklad jednoho řádku: `F100|R90|U|F50|D|C30|S50`.
+### 3. Co takhle zašifrovat soubor?
+Implementujte funkci `my_encrypt_file(filename: str, key: int) -> None`, která přečte soubor `filename` a zašifruje jeho obsah do nového souboru, který vytvoří. Nový soubor bude mít příponu `.enc`.
 
-- Interpretace příkazu: Každý příkaz se skládá z jednoho písmene (akce) a volitelně z čísla (hodnoty). Hodnotu nezapomeňte převést na desetinné číslo (`float`).
+> 💡 *Není třeba, abyste implementovali celou metodu šifrování znovu, využijte funkcí, které máte již hotové. Nezapomeňte na encoding.*
 
-Podporované příkazy:
+### 4. A nakonec dešifrování souboru
+Implementujte funkci `my_decrypt_file(filename: str, key: int) -> None`, která přečte soubor `filename.enc` (příponu `.enc` musíte dodat sami) a dešifruje jeho obsah do souboru `filename` (bez `.enc`).
 
-- `F`, `B`, `L`, `R`, `C` – Základní pohyby želvy (`forward`, `backward`, `left`, `right`, `circle`) o danou hodnotu.
+## 🌟 BONUS
+V rámci bonusu se vám otevřou další tři testy, které ověří, jestli je vaše šifra dostatečně silná. (Tohle je čistě bonusová část, kterou nemusíte dělat, neboť jsem vám na začátku cvičení slíbil, že vaše šifra nemusí být tolik silná. V rámci procvičení je to ale cenná zkušenost.)
 
-- `U`, `D` – Zvednutí pera (`penup`) a položení pera (`pendown`). Tyto příkazy za sebou nemají žádné číslo.
+Testy budou zkoumat tři vlastnosti šifrovacích algoritmů:
+- Nejprve **LAVINOVÝ EFEKT**. To znamená, že pokud se změní ve výchozím textu jediné písmenko, měla by se změna projevit i ve zbytku textu, nikoliv jen na tom jednom písmenku. Je to velmi cenná vlastnost šifrovacích algoritmů, která výrazně ztěžuje násilné prolomení zašifrovaných dat. Můžete spoléhat na to, že změněné písmeno v textu bude na začátku, nemusíte tedy zpětně iterovat podruhé od konce.
+- Dále **ODOLNOST PROTI FREKVENČNÍ ANALÝZE**. Tato vlastnost je poměrně přímočará. Zajišťuje, aby byla distribuce znaků v zašifrovaném textu cca rovnoměrná, aby nešla přímo vypozorovat jednotlivá písmena.
+- A nakonec **ÚNIK METAINFORMACÍ**. Nesnažíte se zašifrovat jen samotný text, ale i jeho podobu. Únik nechtěnných informací může vést k dešifrování celého vašeho textu. Proto je vhodné nezměnit jen písmenka, ale rovněž zajistit, aby nešlo například vyčíst, jak je zpráva dlouhá, kolik má slov a kolik mají jednotlivá slova písmen, apod. Tento test kontroluje jen a pouze to, zdali byly šifrováním zastřeny pozice mezer a tudíž délky slov.
 
-- `S` – Vykreslí čtverec (Square), jehož délka strany odpovídá dané hodnotě. Tento příkaz želva nativně neumí, musíte ho naprogramovat pomocí cyklu (4x jdi dopředu a zahni o 90 stupňů).
+> *Jak byste implementovali vlastnost, která by znamenala, že by nešla vyšíst délka zprávy?*
 
-💡 Nápovědy k implementaci:
-
-- Abyste nemuseli psát nekonečně dlouhou sérii podmínek if/elif pro každý jeden příkaz, můžete využít slovník (`dict`). Do slovníku si totiž můžete uložit přímo samotné funkce (bez závorek)!
-```python
-commands_dict = {
-    "F": t.forward,
-    "L": t.left
-}
-# A poté funkci zavolat jednoduše takto:
-commands_dict["F"](100)  # Uvede do pohybu funkci t.forward s argumentem 100
-```
-- Pro rozdělení příkazu na písmeno a číslo využijte slicing řetězců. První znak získáte jako `command[0]` a zbytek do konce řetězce získáte jako `command[1:]`. (Proměnná `command` zde představuje jeden příkaz, např. `F150`).
-
-- Pokud narazíte na prázdný příkaz (například pokud by za sebou byla dvě svislítka `||`), jednoduše ho přeskočte např. klíčovým slovem `continue`.
-
-### ❔ Nehodnocená úloha: Kódování obrázku
-Zvládli byste v tuto chvíli už zakódovat obrázek do souboru, klidně v textové podobě?
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
-* `turtle`
+* `difflib`
 * `collections` *(default)* 
 * `datetime` *(default)*
 * `math` *(default)*
