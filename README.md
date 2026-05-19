@@ -68,7 +68,7 @@ Testy budou zkoumat tři vlastnosti šifrovacích algoritmů:
 - Dále **ODOLNOST PROTI FREKVENČNÍ ANALÝZE**. Tato vlastnost je poměrně přímočará. Zajišťuje, aby byla distribuce znaků v zašifrovaném textu cca rovnoměrná, aby nešla přímo vypozorovat jednotlivá písmena.
 - A nakonec **ÚNIK METAINFORMACÍ**. Nesnažíte se zašifrovat jen samotný text, ale i jeho podobu. Únik nechtěnných informací může vést k dešifrování celého vašeho textu. Proto je vhodné nezměnit jen písmenka, ale rovněž zajistit, aby nešlo například vyčíst, jak je zpráva dlouhá, kolik má slov a kolik mají jednotlivá slova písmen, apod. Tento test kontroluje jen a pouze to, zdali byly šifrováním zastřeny pozice mezer a tudíž délky slov.
 
-> *Jak byste implementovali vlastnost, která by znamenala, že by nešla vyšíst délka zprávy?*
+> *Jak byste implementovali vlastnost, která by znamenala, že by nešla vyčíst délka zprávy?*
 
 
 ---
