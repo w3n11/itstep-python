@@ -41,12 +41,20 @@ Svá řešení pište do souboru `assignment.py`.
 ### 1. Mazlíček
 Implementujte třídu `Pet`, která bude obsahovat následující atributy:
 - `name (str)`: jméno mazlíčka
-- `age (int)`: věk mazlíčka
-- `happiness (int)`: radost mazlíčka
+- `energy (int)`: energie mazlíčka, výchozí hodnota = 5
+- `happiness (int)`: radost mazlíčka, výchozí hodnota = 5
 
 Funkce `__init__` bude kromě samozřejmého `self` příjimat i parametr `name`
 
 > 💡 *Nezapomeňte na klíčové slovo `self`, které způsobí, že z proměnné vytvoříte atribut. Např. `self.name = name`.*
+
+### 2. Metody mazlíčka
+Implementujte do třídy `Pet` metody `play` a `sleep`.
+
+- `sleep` zvýší `energy` o `5`.
+- `play` zvýší `happiness` o `1`, ale sníží `energy` o `2`.
+
+Pokud by `energy` nebo `happiness` mělo být vyšší než `10` nebo menší než `0`, nic se nestane a **metoda** nic neudělá.
 
 ## 🌟 BONUS
 V rámci bonusu se vám odemkne 0 úloh navíc.

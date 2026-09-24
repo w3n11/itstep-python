@@ -146,7 +146,16 @@ def run_test(test: tests.TestCase) -> TestResult:
 
         timeout_seconds = test.timeout
         start_time = time.time()
-        target_func = getattr(assignment, test.func, None)
+        if callable(test.func):
+            _custom_func = test.func
+
+            def wrapped_func(*args, **kwargs):
+                return _custom_func(assignment, *args, **kwargs)
+
+            target_func = wrapped_func
+        else:
+            target_func = getattr(assignment, str(test.func), None)
+
         if target_func is None:
             log(f"[SKIP] {test.func} (Neimplementováno)", InputColor.SKIP)
             return TestResult.SKIP
@@ -421,7 +430,7 @@ def run_tests():
             tests_error += 1
         elif result == TestResult.SKIP:
             tests_skipped += 1
-            not_implemented.append(case.func)
+            not_implemented.append(str(case.func))
 
     # --- RESULTS ---
     elapsed_time = time.time() - global_start_time
