@@ -38,7 +38,7 @@ class Procedure:
 @dataclass
 class TestCase:
     # Unique id, eg. 1.0, 1.1, 2.4, 3.5.2
-    id: str
+    id: tuple[int, ...]
 
     # Name will be displayed in the test run result, it should describe what is it testing
     name: str
@@ -60,7 +60,7 @@ class TestCase:
     verify_print: Any | Callable[[Any], bool] = None
     max_calls: dict[str, int] = field(default_factory=dict)
     required_calls: dict[str, int] = field(default_factory=dict)
-    prerequisites: set[str] = field(default_factory=set)
+    prerequisites: set[tuple[int, ...]] = field(default_factory=set)
 
     @staticmethod
     def test_class_existence(assignment, class_name: str) -> bool:
@@ -190,33 +190,22 @@ def generate(seed: int | None = None) -> list[TestCase]:
 
     result: list[TestCase] = [
         TestCase(
-            id="1.0",
+            id=(1, 0),
             name="Human - existence",
             func=TestCase.test_class_existence,
             args=("Human",),
             expected_return=True
         ),
         TestCase(
-            id="1.1",
+            id=(1, 1),
             name="Human - inicializace",
             func=TestCase.test_class_init,
             args=("Human",),
             expected_return=True,
-            prerequisites={"1.0"}
+            prerequisites={(1, 0)}
         ),
         TestCase(
-            id="1.2",
-            name="Human - výchozí jméno je \"John Doe\"",
-            func=TestCase.test_class,
-            args=(
-                "Human", Procedure()
-                .add("name", expected_return_or_value="John Doe")
-            ),
-            expected_return=True,
-            prerequisites={"1.0", "1.1"}
-        ),
-        TestCase(
-            id="1.3",
+            id=(1, 2),
             name="Human - vlastní jméno",
             func=TestCase.test_class,
             args=(
@@ -225,10 +214,21 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Pepíno",)
             ),
             expected_return=True,
-            prerequisites={"1.0", "1.1"}
+            prerequisites={(1, 0), (1, 1)}
         ),
         TestCase(
-            id="1.4",
+            id=(1, 3),
+            name="Human - výchozí jméno je \"John Doe\"",
+            func=TestCase.test_class,
+            args=(
+                "Human", Procedure()
+                .add("name", expected_return_or_value="John Doe")
+            ),
+            expected_return=True,
+            prerequisites={(1, 0), (1, 1)}
+        ),
+        TestCase(
+            id=(1, 4),
             name="Human - metoda __str__",
             func=TestCase.test_class,
             args=(
@@ -237,18 +237,18 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Pepíno",)
             ),
             expected_return=True,
-            prerequisites={"1.2", "1.3"}
+            prerequisites={(1, 2), (1, 3)}
         ),
         TestCase(
-            id="2.0",
+            id=(2, 0),
             name="Car - existence",
             func=TestCase.test_class_existence,
             args=("Car",),
             expected_return=True,
-            prerequisites={"1.0", "1.1", "1.2", "1.3"}
+            prerequisites={(1, 4)}
         ),
         TestCase(
-            id="2.1",
+            id=(2, 1),
             name="Car - inicializace",
             func=TestCase.test_class_init,
             args=(
@@ -257,10 +257,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.0"}
+            prerequisites={(2, 0)}
         ),
         TestCase(
-            id="2.2",
+            id=(2, 2),
             name="Car - značka auta",
             func=TestCase.test_class,
             args=(
@@ -270,10 +270,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.1"}
+            prerequisites={(2, 1)}
         ),
         TestCase(
-            id="2.3",
+            id=(2, 3),
             name="Car - vlastní počet míst",
             func=TestCase.test_class,
             args=(
@@ -282,10 +282,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes", 2)
             ),
             expected_return=True,
-            prerequisites={"2.2"}
+            prerequisites={(2, 2)}
         ),
         TestCase(
-            id="2.4",
+            id=(2, 4),
             name="Car - 1 pasažér",
             func=TestCase.test_class,
             args=(
@@ -296,10 +296,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.3"}
+            prerequisites={(2, 3)}
         ),
         TestCase(
-            id="2.5",
+            id=(2, 5),
             name="Car - 2 pasažéři",
             func=TestCase.test_class,
             args=(
@@ -311,10 +311,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.4"}
+            prerequisites={(2, 4)}
         ),
         TestCase(
-            id="2.6",
+            id=(2, 6),
             name="Car - 2 pasažéři, specifická místa",
             func=TestCase.test_class,
             args=(
@@ -326,10 +326,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.5"}
+            prerequisites={(2, 5)}
         ),
         TestCase(
-            id="2.7",
+            id=(2, 7),
             name="Car - více pasažérů, obsazeno",
             func=TestCase.test_class,
             args=(
@@ -342,10 +342,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Mercedes",)
             ),
             expected_return=True,
-            prerequisites={"2.6"}
+            prerequisites={(2, 6)}
         ),
         TestCase(
-            id="2.8",
+            id=(2, 8),
             name="Car - plně obsazeno",
             func=TestCase.test_class,
             args=(
@@ -357,10 +357,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Audi", 2)
             ),
             expected_return=True,
-            prerequisites={"2.7"}
+            prerequisites={(2, 7)}
         ),
         TestCase(
-            id="2.9",
+            id=(2, 9),
             name="Car - usazení mimo auto",
             func=TestCase.test_class,
             args=(
@@ -370,10 +370,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Audi", 2)
             ),
             expected_return=True,
-            prerequisites={"2.8"}
+            prerequisites={(2, 8)}
         ),
         TestCase(
-            id="2.10",
+            id=(2, 10),
             name="Car - usazení mimo auto",
             func=TestCase.test_class,
             args=(
@@ -383,7 +383,7 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("Audi", 0)
             ),
             expected_return=True,
-            prerequisites={"2.9"}
+            prerequisites={(2, 9)}
         )
     ]
     return result
@@ -393,7 +393,7 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
     random.seed(seed)
     result: list[TestCase] = [
         TestCase(
-            id="B.1",
+            id=(0, 1),
             name="Car - metoda __str__",
             func=TestCase.test_class,
             args=(
@@ -405,7 +405,7 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
             expected_return=True
         ),
         TestCase(
-            id="B.2",
+            id=(0, 2),
             name="Car - metoda __str__",
             func=TestCase.test_class,
             args=(
@@ -416,10 +416,10 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
                 ("BMW", 2)
             ),
             expected_return=True,
-            prerequisites={"B.1"}
+            prerequisites={(0, 1)}
         ),
         TestCase(
-            id="B.3",
+            id=(0, 3),
             name="Car - metoda __str__",
             func=TestCase.test_class,
             args=(
@@ -434,7 +434,7 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
                 ("Škoda", 3)
             ),
             expected_return=True,
-            prerequisites={"B.2"}
+            prerequisites={(0, 2)}
         )
     ]
     return result

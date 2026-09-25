@@ -136,7 +136,7 @@ def log(text: str, color: InputColor = InputColor.BASE) -> None:
 
 # --- MODULAR TEST RUNNER START ---
 def run_test(test: tests.TestCase, auto_skip: bool = False) -> TestResult:
-    test_name: str = f"{test.id} {test.name}"
+    test_name: str = ".".join(str(x) for x in test.id) + " " + test.name
     try:
         if auto_skip:
             log(f"[SKIP] {test_name}", InputColor.SKIP)
@@ -431,7 +431,7 @@ def run_tests():
         log("[INFO] Žádné testy nebyly definovány.", InputColor.INFO)
         return
 
-    passed_tests_ids: set[str] = set()
+    passed_tests_ids: set[tuple[int, ...]] = set()
     for case in test_cases:
         # if :
         #     tests_skipped += 1
