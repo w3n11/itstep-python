@@ -128,7 +128,7 @@ class TestCase:
             if not hasattr(instance, step.attribute_or_method):
                 trace.append(call_repr)
                 raise AssertionError(
-                    f"Objekt nemá atribut/metodu '{step.attribute_or_method}'\n\nPostup:\n""\n".join(trace) + "\n"
+                    f"Objekt nemá atribut/metodu '{step.attribute_or_method}'\n\nPostup:\n" + "\n".join(trace) + "\n"
                 )
 
             target = getattr(instance, step.attribute_or_method)
