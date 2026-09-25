@@ -365,6 +365,7 @@ def run_tests():
     log("[INFO] Kontroluji předpoklady...", InputColor.INFO)
     prerequisites_passed: bool = True
     file: str = "assignment.py"
+
     try:
         pep8_fulfilled, flake8_stdout = prerequisite_flake8(file)
         if not pep8_fulfilled:
