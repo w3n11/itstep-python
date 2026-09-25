@@ -135,8 +135,13 @@ def log(text: str, color: InputColor = InputColor.BASE) -> None:
 
 
 # --- MODULAR TEST RUNNER START ---
-def run_test(test: tests.TestCase) -> TestResult:
+def run_test(test: tests.TestCase, auto_skip: bool = False) -> TestResult:
+    test_name: str = f"{test.id} {test.name}"
     try:
+        if auto_skip:
+            log(f"[SKIP] {test_name}", InputColor.SKIP)
+            return TestResult.SKIP
+
         import assignment
         safe_args = test.args or ()
         safe_kwargs = test.kwargs or {}
@@ -157,7 +162,7 @@ def run_test(test: tests.TestCase) -> TestResult:
             target_func = getattr(assignment, str(test.func), None)
 
         if target_func is None:
-            log(f"[SKIP] {test.func} (Neimplementováno)", InputColor.SKIP)
+            log(f"[SKIP] {test_name} (Neimplementováno)", InputColor.SKIP)
             return TestResult.SKIP
 
         def tracer(frame, event, arg):
@@ -174,7 +179,7 @@ def run_test(test: tests.TestCase) -> TestResult:
                     try:
                         s_func()
                     except Exception as e:
-                        log(f"[FAIL] {test.name} (Chyba v setup fázi)", InputColor.ERROR)
+                        log(f"[FAIL] {test_name} (Chyba v setup fázi)", InputColor.ERROR)
                         log(f"       Při přípravě testu nastala výjimka: {e}", InputColor.WARNING)
                         return TestResult.ERROR
 
@@ -184,6 +189,7 @@ def run_test(test: tests.TestCase) -> TestResult:
                 shared_inputs = iter(test.inputs)
 
                 mock_input = stack.enter_context(patch("builtins.input", side_effect=shared_inputs))
+                mock_getpass = None
                 if hasattr(assignment, "getpass"):
                     if not isinstance(assignment.getpass, types.ModuleType):  # type: ignore
                         mock_getpass = stack.enter_context(patch.object(assignment, "getpass",
@@ -203,6 +209,8 @@ def run_test(test: tests.TestCase) -> TestResult:
                     if target == "builtins.input":
                         mock_trackers[target] = (mock_input, limit)
                     elif target == "getpass.getpass":
+                        if mock_getpass is None:
+                            raise Exception("Error happened and it shouldn't.")
                         mock_trackers[target] = (mock_getpass, limit)
                     else:
                         parts = target.split(".")
@@ -226,7 +234,7 @@ def run_test(test: tests.TestCase) -> TestResult:
             for target, (mock_obj, limit) in mock_trackers.items():
                 # max_calls
                 if mock_obj.call_count > limit:
-                    log(f"[FAIL] {test.name} (Přesáhli jste limit)", InputColor.ERROR)
+                    log(f"[FAIL] {test_name} (Přesáhli jste limit)", InputColor.ERROR)
                     replaced: str = target.replace("builtins.", "")
                     log(f"       Funkci '{replaced}' můžete zavolat nanejvýš {limit}x.", InputColor.WARNING)
                     log(f"       Zavolali jste ji však {mock_obj.call_count}x.", InputColor.WARNING)
@@ -239,18 +247,18 @@ def run_test(test: tests.TestCase) -> TestResult:
                     actual_count = mock_obj.call_count if mock_obj else 0
 
                     if actual_count < required_count:
-                        log(f"[FAIL] {test.name} (Nepoužili jste požadovanou funkci)", InputColor.ERROR)
+                        log(f"[FAIL] {test_name} (Nepoužili jste požadovanou funkci)", InputColor.ERROR)
                         replaced: str = target.replace("builtins.", "")
                         log(f"       Funkci '{replaced}' musíte zavolat alespoň {required_count}x.", InputColor.WARNING)
                         log(f"       Zavolali jste ji pouze {actual_count}x.", InputColor.WARNING)
                         return TestResult.FAIL
 
         except StopIteration:
-            log(f"[FAIL] {test.name} (Deadlock)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Deadlock)", InputColor.ERROR)
             log("       Zavolali jste funkci input() vícekrát, než bylo nutné.", InputColor.WARNING)
             return TestResult.FAIL
         except TimeoutException:
-            log(f"[FAIL] {test.name} (Timeout)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Timeout)", InputColor.ERROR)
             log(f"       Vaše funkce přesáhla limit {timeout_seconds} sekund.", InputColor.WARNING)
             log("       Byla buď neefektivní nebo se zacyklila.", InputColor.INFO)
             return TestResult.FAIL
@@ -259,78 +267,84 @@ def run_test(test: tests.TestCase) -> TestResult:
 
         if test.expected_exception is not None:
             if caught_exception is None:
-                log(f"[FAIL] {test.name} (Byla očekávána výjimka)", InputColor.ERROR)
+                log(f"[FAIL] {test_name} (Byla očekávána výjimka)", InputColor.ERROR)
                 log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
                 log(f"       Obdrženo:  {actual_return}", InputColor.WARNING)
                 return TestResult.FAIL
             elif not isinstance(caught_exception, test.expected_exception):
-                log(f"[FAIL] {test.name} (Byla očekávána jiná výjimka)", InputColor.ERROR)
+                log(f"[FAIL] {test_name} (Byla očekávána jiná výjimka)", InputColor.ERROR)
                 log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
                 log(f"       Obdrženo:  {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
                 return TestResult.ERROR
             else:
-                log(f"[PASS] {test.name}", InputColor.SUCCESS)
+                log(f"[PASS] {test_name}", InputColor.SUCCESS)
                 return TestResult.SUCCESS
         if caught_exception is not None:
-            log(f"[FAIL] {test.name} (Nastala výjimka)", InputColor.ERROR)
-            log(f"       {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
-            return TestResult.ERROR
+            if isinstance(caught_exception, AssertionError):
+                log(f"[FAIL] {test_name}", InputColor.ERROR)
+                for line in str(caught_exception).split("\n"):
+                    log(f"       {line}", InputColor.WARNING)
+                return TestResult.FAIL
+            else:
+                log(f"[FAIL] {test_name} (Nastala výjimka)", InputColor.ERROR)
+                log(f"       {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
+                return TestResult.ERROR
 
         program_print = program_output.getvalue()
 
         if test.expected_print is not None and test.expected_print != program_print:
-            log(f"[FAIL] {test.name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
             log(f"       Očekáváno: {shorten(repr(test.expected_print))} (len={len(test.expected_print)})",
                 InputColor.WARNING)
             log(f"       Obdrženo:  {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
             return TestResult.FAIL
 
         if test.verify_print is not None and not test.verify_print(program_print):
-            log(f"[FAIL] {test.name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Vypsali jste nesprávný výsledek)", InputColor.ERROR)
             log("       Váš výstup nesplňuje požadavky.", InputColor.WARNING)
             return TestResult.FAIL
 
         if test.expected_print is None and program_print != "" and test.verify_print is None:
-            log(f"[FAIL] {test.name} (Unexpected output)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Unexpected output)", InputColor.ERROR)
             log(f"       {shorten(repr(program_print))} (len={len(program_print)})", InputColor.WARNING)
             return TestResult.FAIL
 
         if test.expected_return is not None:
             if callable(test.expected_return):
                 if not test.expected_return(actual_return):
-                    log(f"[FAIL] {test.name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
+                    log(f"[FAIL] {test_name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
                     log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
                     log("       Návratová hodnota neprošla testem.", InputColor.INFO)
                     return TestResult.FAIL
             elif test.expected_return != actual_return:
-                log(f"[FAIL] {test.name} (Nesprávná návratová hodnota)", InputColor.ERROR)
+                log(f"[FAIL] {test_name} (Nesprávná návratová hodnota)", InputColor.ERROR)
                 log(f"       Očekáváno: {shorten(repr(test.expected_return))}", InputColor.WARNING)
                 log(f"       Obdrženo: {shorten(repr(actual_return))}", InputColor.WARNING)
                 return TestResult.FAIL
 
         if test.expected_return is None and actual_return is not None:
-            log(f"[FAIL] {test.name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
+            log(f"[FAIL] {test_name} (Neočekávaná návratová hodnota)", InputColor.ERROR)
             log(f"       {shorten(repr(actual_return))}", InputColor.WARNING)
             return TestResult.FAIL
 
         if hasattr(test, "file_validators") and test.file_validators:
             for filepath, validator in test.file_validators.items():
                 if not os.path.exists(filepath):
-                    log(f"[FAIL] {test.name} (Chybí soubor)", InputColor.ERROR)
+                    log(f"[FAIL] {test_name} (Chybí soubor)", InputColor.ERROR)
                     log(f"       Očekávaný soubor '{filepath}' nebyl vytvořen nebo nalezen.", InputColor.WARNING)
                     return TestResult.FAIL
 
                 try:
                     if not validator(filepath):
-                        log(f"[FAIL] {test.name} (Soubor neprošel testem)", InputColor.ERROR)
+                        log(f"[FAIL] {test_name} (Soubor neprošel testem)", InputColor.ERROR)
                         log(f"       Obsah souboru '{filepath}' nesplňuje zadané podmínky.", InputColor.WARNING)
                         return TestResult.FAIL
                 except Exception as e:
-                    log(f"[FAIL] {test.name} (Chyba při čtení/validaci souboru)", InputColor.ERROR)
+                    log(f"[FAIL] {test_name} (Chyba při čtení/validaci souboru)", InputColor.ERROR)
                     log(f"       Při ověřování souboru '{filepath}' nastala výjimka: {e}", InputColor.WARNING)
                     return TestResult.FAIL
 
-        log(f"[PASS] {test.name}", InputColor.SUCCESS)
+        log(f"[PASS] {test_name}", InputColor.SUCCESS)
         return TestResult.SUCCESS
     finally:
         if hasattr(test, "teardown") and test.teardown:
@@ -339,7 +353,7 @@ def run_test(test: tests.TestCase) -> TestResult:
                 try:
                     t_func()
                 except Exception as e:
-                    log(f"[WARN] {test.name} (Chyba v teardown fázi)", InputColor.WARNING)
+                    log(f"[WARN] {test_name} (Chyba v teardown fázi)", InputColor.WARNING)
                     log(f"       Nepodařilo se uklidit prostředí: {e}", InputColor.WARNING)
 
 
@@ -415,22 +429,23 @@ def run_tests():
     if tests_total == 0:
         log("[INFO] Žádné testy nebyly definovány.", InputColor.INFO)
         return
-    not_implemented: list[str] = []
-    for case in test_cases:
-        if case.func in not_implemented:
-            tests_skipped += 1
-            continue
 
-        result = run_test(case)
+    passed_tests_ids: set[str] = set()
+    for case in test_cases:
+        # if :
+        #     tests_skipped += 1
+        #     continue
+
+        result = run_test(case, not case.prerequisites.issubset(passed_tests_ids))
         if result == TestResult.SUCCESS:
             tests_passed += 1
+            passed_tests_ids.add(case.id)
         elif result == TestResult.FAIL:
             tests_failed += 1
         elif result == TestResult.ERROR:
             tests_error += 1
         elif result == TestResult.SKIP:
             tests_skipped += 1
-            not_implemented.append(str(case.func))
 
     # --- RESULTS ---
     elapsed_time = time.time() - global_start_time
@@ -440,7 +455,7 @@ def run_tests():
     filled = int(bar_length * tests_passed / tests_total) if tests_total > 0 else 0
     bar = "█" * filled + "░" * (bar_length - filled)
 
-    log("\n" + divider("📊 VÝSLEDKY TESTŮ") + "\n", InputColor.INFO)
+    log("\n" + divider("VÝSLEDKY TESTŮ") + "\n", InputColor.INFO)
 
     log(f" Semínko:         {SEED}", InputColor.BASE)
     log(f" Uplynulý čas:    {elapsed_time:.2f}s", InputColor.BASE)
@@ -491,7 +506,7 @@ def run_tests():
                 log(f"[FAIL] Neočekávaná chyba: {e}", InputColor.ERROR)
                 prerequisites_passed = False
             if pep8_fulfilled:
-                log("[PASS] VÝBORNĚ. VÁŠ KÓD JE BEZCHYBNÝ.\n", InputColor.SUCCESS)
+                log("\n[PASS] Výborně. Tvůj kód je bezchybný.\n", InputColor.SUCCESS)
             else:
                 log("[PASS] Váš kód funguje bezchybně.", InputColor.SUCCESS)
                 log("[FAIL] Ale není stylisticky správně.", InputColor.ERROR)
