@@ -1,13 +1,17 @@
 # Python Advanced - Lekce 01: Úvod do OOP
 
 ## Struktura adresáře
+
 Budou vás zajímat jen tři soubory:
+
 * `README.md` – Tento soubor, který právě čtete. Obsahuje zadání lekce.
 * `assignment.py` – Soubor, do kterého budete **psát svůj kód a řešení**.
 * `run.py` – Testovací motor. Tento soubor neupravujte, slouží k automatickému hodnocení vaší práce.
+
 ---
 
 ## Jak fungují testy?
+
 Váš postup v hodině nebudu kontrolovat jen já, ale pomůže nám v tom automatizovaný systém. Strávil jsem nemalé úsilí napsáním testovacího frameworku, který bude okamžitě hodnotit, jak zdárně jste úlohy naprogramovali. 
 
 Testy spustíte v terminálu příkazem (musíte se nacházet ve složce s projektem):
@@ -47,7 +51,7 @@ Implementujte třídu `Human`, která bude obsahovat následující atributy:
 Její **inicializační** metoda `__init__` bude kromě samozřejmého `self` příjimat i parametr `name`.
 > [!NOTE]
 > Pojmenování třídy předchází slůvko `class` stejně, jako předchází funkci slovo `def`.
-> 
+>
 > Nezapomeňte na klíčové slovo `self`, které způsobí, že z proměnné vytvoříte atribut. Např. `self.name = name`.
 
 <details>
@@ -126,6 +130,19 @@ Metoda vrátí `True` pokud si osoba sednula do auta, jinak `False`.
 > [!NOTE]
 > Parametr `name` je typu `str`, ale náš atribut `passengers` je typu `list[Human | None]`. To znamená, že budete muset nejdříve objekt třídy `Human` inicializovat s pomocí daného jména.
 
+<details>
+<summary>Řešení</summary>
+
+```python
+def add_passenger(self, passenger_name):
+    for i in range(len(self.passengers)):
+        if self.passengers[i] is None:
+            self.passengers[i] = Human(passenger_name)
+            return True
+    return False
+```
+</details>
+
 ---
 
 ## V. Vybíraví pasažéři.
@@ -138,11 +155,57 @@ Opět, pokud místo není volné, vraťte `False`. Pokud se pasažér pokusil se
 > [!NOTE]
 > První místo má index roven `0`, poslední místo má index roven `<počet míst> - 1`.
 
+<details>
+<summary>Řešení</summary>
+
+```python
+def add_passenger(self, passenger_name, seat = None):
+    if seat is None:
+        for i in range(len(self.passengers)):
+            if self.passengers[i] is None:
+                self.passengers[i] = Human(passenger_name)
+                return True
+        return False
+
+    try:
+        if self.passengers[seat] is None:
+            self.passengers[seat] = Human(passenger_name)
+            return True
+        return False
+    except IndexError:
+        return False
+```
+</details>
+
 ---
 
 ## BONUS
-V rámci bonusu se vám odemkne 0 úloh navíc.
 
+Přidejte výpis do stringu. Když se nějaká proměnná převádí na `str` (řetězec), volá se její interní metoda `__str__`, která přijímá pouze parametr `self`.
+
+Přidejte takovou proměnnou, která bude vypisovat následujícím způsobem:
+
+Pro auto značky **BMW** o obsazených třech místech ze čtyř.
+```
+BMW
+  - Mrakoplaš
+  - Dvoukvítek
+  - Lasička
+```
+Pro auto značky **Lamborghini** o obsazených dvou místech ze dvou.
+```
+Lamborghini
+  - Mrakoplaš
+  - Dvoukvítek
+```
+Pro auto značky **Mazda**, ve kterém nesedí žádný pasažér.
+```
+Lamborghini
+  (the car is empty)
+```
+
+> [!IMPORTANT]
+> Je třeba dodržet správný počet mezer.
 
 ---
 **📦 Povolené moduly v dnešní lekci:**
