@@ -412,7 +412,7 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
                 "Car", Procedure()
                 .add("add_passenger", ("Mrakoplaš",), expected_return_or_value=True)
                 .add("passengers", expected_return_or_value=expect_passengers(["Mrakoplaš", None]))
-                .add("__str__", expected_return_or_value="BMW\n  - Mrakoplaš"),
+                .add("__str__", expected_return_or_value="BMW\n  - Mrakoplaš\n  - (empty seat)"),
                 ("BMW", 2)
             ),
             expected_return=True,

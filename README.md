@@ -64,7 +64,7 @@ class Human:
 ```
 </details>
 
-___
+---
 
 ### II. Výchozí hodnota
 *1.3*<br>
@@ -91,7 +91,24 @@ class Human:
 
 ---
 
-### III. Druhá třída? Magie?
+### III. Speciální metody
+*1.4*<br>
+Pomocí specilních metod jsme schopni upravit chování objektu/třídy v různých situacích. Pro hlubší zkoumání doporučuji [tento odkaz](https://docs.python.org/3/reference/datamodel.html#special-method-names). Nám dnes postačí pouze změnit chování metody `__str__`, která se na objektu volá například při vložení objektu jako parametru do funkce `print()`, nebo při použití v f-stringu: `f"This is a string representation of my object: {my_object}"`
+
+Hlavním cílem metody `__str__` je, aby byla čitelná pro člověka. Funkce samotná nic nevypisuje, vždy jen **vrací** `str`. Vaším úkolem je teď naprogramovat tuto metodu tak, aby vracela jméno dané osoby a nic víc.
+
+<details>
+<summary>Řešení</summary>
+
+```python
+    def __str__(self):
+        return self.name
+```
+</details>
+
+---
+
+### IV. Druhá třída? Magie?
 *2.0 - 2.3*<br>
 Ne, tak docela to magie není, ale umožňuje to dělat pomocí kódu spoustu zajímavých věcí, které bychom bez tříd simulovali jen obtížně.
 
@@ -119,7 +136,7 @@ class Car:
 
 ---
 
-## IV. Nastupovat!
+## V. Nastupovat!
 *2.4 - 2.5*<br>
 Tak... Teď máme člověka i auto. Teď naprogramujeme možnost, aby si člověk sedl.
 
@@ -134,18 +151,18 @@ Metoda vrátí `True` pokud si osoba sednula do auta, jinak `False`.
 <summary>Řešení</summary>
 
 ```python
-def add_passenger(self, passenger_name):
-    for i in range(len(self.passengers)):
-        if self.passengers[i] is None:
-            self.passengers[i] = Human(passenger_name)
-            return True
-    return False
+    def add_passenger(self, passenger_name):
+        for i in range(len(self.passengers)):
+            if self.passengers[i] is None:
+                self.passengers[i] = Human(passenger_name)
+                return True
+        return False
 ```
 </details>
 
 ---
 
-## V. Vybíraví pasažéři.
+## VI. Vybíraví pasažéři.
 Možná jste někdy chtěli sedět u okýnka. Nebo uprostřed, nebo na místě spolujezdce. Proč tuto možnost nenabídnout i našim pasažérům?
 
 Přidejte volitelný parametr typu `int` (index) metodě `add_passenger`, který specifikuje, na které místo si chce daná osoba sednout.
@@ -159,21 +176,21 @@ Opět, pokud místo není volné, vraťte `False`. Pokud se pasažér pokusil se
 <summary>Řešení</summary>
 
 ```python
-def add_passenger(self, passenger_name, seat = None):
-    if seat is None:
-        for i in range(len(self.passengers)):
-            if self.passengers[i] is None:
-                self.passengers[i] = Human(passenger_name)
-                return True
-        return False
+    def add_passenger(self, passenger_name, seat = None):
+        if seat is None:
+            for i in range(len(self.passengers)):
+                if self.passengers[i] is None:
+                    self.passengers[i] = Human(passenger_name)
+                    return True
+            return False
 
-    try:
-        if self.passengers[seat] is None:
-            self.passengers[seat] = Human(passenger_name)
-            return True
-        return False
-    except IndexError:
-        return False
+        try:
+            if self.passengers[seat] is None:
+                self.passengers[seat] = Human(passenger_name)
+                return True
+            return False
+        except IndexError:
+            return False
 ```
 </details>
 
@@ -191,6 +208,7 @@ BMW
   - Mrakoplaš
   - Dvoukvítek
   - Lasička
+  - (empty seat)
 ```
 Pro auto značky **Lamborghini** o obsazených dvou místech ze dvou.
 ```
@@ -200,7 +218,7 @@ Lamborghini
 ```
 Pro auto značky **Mazda**, ve kterém nesedí žádný pasažér.
 ```
-Lamborghini
+Mazda
   (the car is empty)
 ```
 
