@@ -1,11 +1,45 @@
 # Python Advanced - Lekce 01: Úvod do OOP
 
 <details>
-<summary>
+<summary>Jak zprovoznit testy</summary>
 
-#### Úvodní informace
+Krok 1: Instalace Pythonu
 
-</summary>
+Pokud ještě nemáte nainstalovaný Python, musíte jej nejprve nainstalovat:
+
+    Windows (bez administrátorských práv): Otevřete aplikaci Microsoft Store, vyhledejte „Python 3.14“ a klikněte na Instalovat (Install/Get).
+
+    Mac/Ostatní: Přejděte na python.org/downloads a nainstalujte si nejnovější verzi.
+
+Krok 2: Otevření projektu ve VS Code
+
+    Stáhněte si složku s tímto projektem a rozbalte ji (pokud je v ZIP archivu).
+
+    Otevřete editor VS Code.
+
+    V horním menu přejděte na File > Open Folder... (Soubor > Otevřít složku...) a vyberte složku s tímto projektem.
+
+    Pokud se zobrazí varování „Do you trust the authors of the files in this folder?“, klikněte na modré tlačítko Yes, I trust the authors (Ano, důvěřuji autorům).
+
+Krok 3: Automatické nastavení ve VS Code
+
+    Sledujte pravý dolní roh obrazovky. Pokud vás VS Code vyzve k instalaci doporučených rozšíření (např. Python extension), klikněte na Install.
+
+    Ve spodní části obrazovky se automaticky otevře terminál, který pro vás začne na pozadí vytvářet bezpečné virtuální prostředí (.venv). Nechte tento proces doběhnout do konce.
+
+    Pojistka: Pokud na vás vyskočí okno s dotazem „A requirements.txt file was found. Would you like to create a virtual environment?“, klikněte na Yes a následně vyberte Venv.
+
+Krok 4: Spuštění kódu
+
+Do terminálu nic ručně nevypisujte. Pro spolehlivé a bezpečné spuštění kódu:
+
+    V levém panelu (Průzkumník) klikněte na soubor run.py, aby se otevřel.
+
+    Klikněte na tlačítko Přehrát (▶) v pravém horním rohu okna.
+
+    Nebo jednoduše stiskněte klávesu F5, čímž se kód rovnou spustí.
+
+</details>
 
 ## Struktura adresáře
 
@@ -43,51 +77,6 @@ Aby testy vůbec prošly a uznaly vám řešení, **musíte** dodržovat násled
 
 > [!IMPORTANT]
 > *Pokud se domníváte, že váš kód splňuje všechna pravidla, a systém vás přesto odmítá pustit dál, zavolejte mě.*
-
-</details>
-
-<details>
-<summary>
-
-#### Jak zprovoznit testy
-
-</summary>
-
-Krok 1: Instalace Pythonu
-
-Pokud ještě nemáte nainstalovaný Python, musíte jej nejprve nainstalovat:
-
-    Windows (bez administrátorských práv): Otevřete aplikaci Microsoft Store, vyhledejte „Python 3.14“ a klikněte na Instalovat (Install/Get).
-
-    Mac/Ostatní: Přejděte na python.org/downloads a nainstalujte si nejnovější verzi.
-
-Krok 2: Otevření projektu ve VS Code
-
-    Stáhněte si složku s tímto projektem a rozbalte ji (pokud je v ZIP archivu).
-
-    Otevřete editor VS Code.
-
-    V horním menu přejděte na File > Open Folder... (Soubor > Otevřít složku...) a vyberte složku s tímto projektem.
-
-    Pokud se zobrazí varování „Do you trust the authors of the files in this folder?“, klikněte na modré tlačítko Yes, I trust the authors (Ano, důvěřuji autorům).
-
-Krok 3: Automatické nastavení ve VS Code
-
-    Sledujte pravý dolní roh obrazovky. Pokud vás VS Code vyzve k instalaci doporučených rozšíření (např. Python extension), klikněte na Install.
-
-    Ve spodní části obrazovky se automaticky otevře terminál, který pro vás začne na pozadí vytvářet bezpečné virtuální prostředí (.venv). Nechte tento proces doběhnout do konce.
-
-    Pojistka: Pokud na vás vyskočí okno s dotazem „A requirements.txt file was found. Would you like to create a virtual environment?“, klikněte na Yes a následně vyberte Venv.
-
-Krok 4: Spuštění kódu
-
-Do terminálu nic ručně nevypisujte. Pro spolehlivé a bezpečné spuštění kódu:
-
-    V levém panelu (Průzkumník) klikněte na soubor run.py, aby se otevřel.
-
-    Klikněte na tlačítko Přehrát (▶) v pravém horním rohu okna.
-
-    Nebo jednoduše stiskněte klávesu F5, čímž se kód rovnou spustí.
 
 </details>
 
