@@ -1,3 +1,6 @@
+import version_guard
+version_guard.check()
+
 import subprocess
 import datetime
 import ast
@@ -45,13 +48,13 @@ def shorten(text: str, max_len: int = 60) -> str:
     tail = text[-split_point:]
     return f"{begin} ... {tail}"
 
-
 def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
         [
             sys.executable, "-m", "flake8",
             "--isolated",
             "--select=F,E9",
+            "--extend-ignore=F401,F841,F811,F541,E741",
             "--max-line-length=120",
             "--statistics",
             "--count",

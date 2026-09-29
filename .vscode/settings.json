@@ -2,5 +2,7 @@
   "flake8.args": [
     "--max-line-length=120"
   ],
-  "todo-tree.tree.showBadges": true
+  "todo-tree.tree.showBadges": true,
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "python.terminal.activateEnvironment": true
 }

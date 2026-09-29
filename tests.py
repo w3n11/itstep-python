@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import random  # noqa: F401
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
 
 class Procedure:
@@ -47,7 +47,7 @@ class TestCase:
     # In the second case the assignment module will be passed as a parameter.
     func: Union[str, Callable]
     args: tuple = ()
-    kwargs: dict | None = None
+    kwargs: Optional[dict] = None
     inputs: list[str] = field(default_factory=list)
     expected_print: str | None = None
     expected_return: Any | Callable[[Any], bool] = None
