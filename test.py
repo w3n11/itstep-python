@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import dis
 from typing import Any, Callable, Union, Optional
 
 
@@ -14,7 +15,7 @@ class Procedure:
     class ProcedureStep:
         attribute_or_method: str
         args: tuple[Any, ...] = ()
-        expect_return_or_value: bool = True
+        ignore: bool = False
         expected_return_or_value: Any = None
 
     def __init__(self) -> None:
@@ -25,13 +26,13 @@ class Procedure:
         attribute_or_method: str,
         args: tuple[Any, ...] = (),
         expected_return_or_value: Any = None,
-        expect_return_or_value: bool = True
+        ignore: bool = False
     ):
         self.steps.append(
             self.ProcedureStep(
                 attribute_or_method=attribute_or_method,
                 args=args,
-                expect_return_or_value=expect_return_or_value,
+                ignore=ignore,
                 expected_return_or_value=expected_return_or_value,
             )
         )
@@ -130,10 +131,10 @@ class TestCase:
             return False
 
     @staticmethod
-    def test_class_init(assignment, class_name: str, *args: Any) -> bool:
+    def test_class_init(assignment, class_name: str, init_args: Any) -> bool:
         try:
             cl = getattr(assignment, class_name)
-            instance = cl(args)
+            instance = cl(*init_args)
             instance = instance
             return True
         except Exception:
@@ -215,23 +216,17 @@ class TestCase:
                     f"Při volání nastala výjimka {type(e).__name__}: {e}\n\nPostup:\n" + "\n".join(trace) + "\n"
                 )
 
-            if step.expect_return_or_value:
+            if not step.ignore:
                 call_repr += f" == {nice_format(step.expected_return_or_value)}"
 
             trace.append(call_repr)
 
-            if step.expect_return_or_value:
-                if callable(step.expected_return_or_value):
-                    if not step.expected_return_or_value(result):
-                        raise AssertionError(
-                            f"Obdrženo: {nice_format(result)}\n\nPostup:\n" + "\n".join(trace) + "\n"
-                        )
-                else:
-                    if result != step.expected_return_or_value:
-                        raise AssertionError(
-                            f"Očekáváno: {nice_format(step.expected_return_or_value)}, Obdrženo: "
-                            f"{nice_format(result)}\n\nPostup:\n" + "\n".join(trace) + "\n"
-                        )
+            if not step.ignore:
+                if not TestCase.compare_values(assignment, result, step.expected_return_or_value):
+                    raise AssertionError(
+                        f"Očekáváno: {nice_format(step.expected_return_or_value)}\n"
+                        f"Obdrženo:  {nice_format(result)}\n\nPostup:\n" + "\n".join(trace) + "\n"
+                    )
         return True
 
     @staticmethod
@@ -265,3 +260,107 @@ class TestCase:
             args_repr = [repr(a) for a in actual_args] + [f"{k}={repr(v)}" for k, v in actual_kwargs.items()]
             call_str = f"{func_name}({', '.join(args_repr)})"
             raise AssertionError(f"Při volání {call_str} nastala výjimka {type(e).__name__}: {e}")
+
+    @staticmethod
+    def test_class_inheritance(assignment, child_class: str, parent_class: str) -> bool:
+        try:
+            child = getattr(assignment, child_class)
+        except AttributeError:
+            raise AssertionError(f"Třída '{child_class}' nebyla nalezena.")
+
+        try:
+            parent = getattr(assignment, parent_class)
+        except AttributeError:
+            raise AssertionError(f"Rodičovská třída '{parent_class}' nebyla nalezena.")
+
+        if not issubclass(child, parent):
+            raise AssertionError(f"Třída '{child_class}' nedědí ze třídy '{parent_class}'.")
+
+        return True
+
+    @staticmethod
+    def test_class_attr_dedup(assignment, class_name: str, forbidden: tuple[str, ...]) -> bool:
+        cl = getattr(assignment, class_name)
+
+        if '__init__' not in cl.__dict__:
+            return True
+
+        for inst in dis.get_instructions(cl.__init__):
+            if inst.opname == 'STORE_ATTR' and inst.argval in forbidden:
+                raise AssertionError(
+                    f"Třída '{class_name}' znovu nastavuje atribut 'self.{inst.argval}'"
+                )
+        return True
+
+    @staticmethod
+    def test_class_definition(
+        assignment,
+        class_name: str,
+        required: tuple[str, ...] | list[str] | str = (),
+        forbidden: tuple[str, ...] | list[str] | str = (),
+        strict: bool = False
+    ) -> bool:
+        """
+        Checks whether a class definition contains (or strictly does not contain) specific attributes/methods.
+
+        Args:
+            assignment: The imported student module.
+            class_name: The name of the class to inspect.
+            required: A string or an iterable of strings with names that MUST be present.
+            forbidden: A string or an iterable of strings with names that MUST NOT be present.
+            strict: If False (default), checks the class and all its inherited parents.
+                    If True, checks strictly just the dictionary of the class itself.
+        """
+        if not hasattr(assignment, class_name):
+            raise AssertionError(f"Třída '{class_name}' nebyla nalezena.")
+
+        cl = getattr(assignment, class_name)
+
+        if isinstance(required, str):
+            required = (required,)
+        if isinstance(forbidden, str):
+            forbidden = (forbidden,)
+
+        for req in required:
+            if strict:
+                if req not in cl.__dict__:
+                    raise AssertionError(f"Třída '{class_name}' musí mít přímo v sobě definováno '{req}'.")
+            else:
+                if not hasattr(cl, req):
+                    raise AssertionError(f"Třída '{class_name}' (ani její rodiče) neobsahuje '{req}'.")
+
+        for forb in forbidden:
+            if strict:
+                if forb in cl.__dict__:
+                    raise AssertionError(
+                        f"Kód není deduplikován! Třída '{class_name}' nesmí mít přímo v sobě definováno '{forb}'. "
+                        "Smažte to a nechte třídu, ať metodu dědí z rodiče."
+                    )
+            else:
+                if hasattr(cl, forb):
+                    raise AssertionError(f"Třída '{class_name}' nesmí vůbec obsahovat '{forb}' (ani zděděně).")
+
+        return True
+
+    @staticmethod
+    def compare_values(assignment, actual: Any, expected: Any) -> bool:
+        """Hopefully universal comparator. If `expected` is callable, it should return `bool`."""
+        if callable(expected):
+            return bool(expected(actual))
+
+        if type(expected).__name__ == "NewInstance":
+            if type(actual).__name__ != expected.class_name:
+                return False
+            temp_cl = getattr(assignment, expected.class_name)
+            try:
+                exp_instance = temp_cl(*expected.args)
+            except Exception:
+                return False
+            return actual.__dict__ == exp_instance.__dict__
+
+        if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
+            if len(actual) != len(expected):
+                return False
+            return all(TestCase.compare_values(assignment, a, e) for a, e in zip(actual, expected))
+
+        return actual == expected
