@@ -1,21 +1,18 @@
-import version_guard
-version_guard.check()
-
-import subprocess
-import datetime
+from argparse import ArgumentParser
 import ast
-from enum import Enum
-from unittest.mock import patch
-import io
 import contextlib
+import datetime
+from enum import Enum
+import importlib
+import io
+import os
+import random
+import subprocess
 import sys
 import time
 import tests
 from typing import Any
-import importlib
-import os
-import random
-from argparse import ArgumentParser
+from unittest.mock import patch
 
 
 class TimeoutException(BaseException):
@@ -47,6 +44,7 @@ def shorten(text: str, max_len: int = 60) -> str:
     begin = text[:split_point]
     tail = text[-split_point:]
     return f"{begin} ... {tail}"
+
 
 def prerequisite_flake8(file: str) -> tuple[bool, str]:
     result = subprocess.run(
