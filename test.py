@@ -43,28 +43,81 @@ class Procedure:
 
 @dataclass
 class TestCase:
-    # Unique id, eg. 1.0, 1.1, 2.4, 3.5.2
+    """
+    Defines a single test scenario for the automated grading of student code.
+
+    The class stores all information about what to execute, what inputs to mock,
+    what behavior is expected, and which previous tests this step depends on.
+    """
+
+    # Unique identifier, e.g., (1, 0), (1, 1), (2, 4), (3, 5, 2).
+    # Used for hierarchical organization of tests and defining dependencies.
     id: tuple[int, ...]
 
-    # Name will be displayed in the test run result, it should describe what is it testing
+    # Name of the test displayed in the console output.
+    # It should clearly describe what is being tested.
     name: str
 
-    # TestCase.test_ function.
+    # Target testing function (usually TestCase.test_class, TestCase.test_func, etc.).
+    # Calling this function handles the actual execution and evaluation of the student's code.
     func: Callable
+
+    # Positional arguments passed to the `func` attribute.
+    # Can contain `NewInstance` proxies, which are dynamically resolved during the test execution.
     args: tuple = ()
+
+    # Keyword arguments passed to the `func` attribute.
     kwargs: Optional[dict] = None
+
+    # A list of strings sequentially mocked into the `input()` or `getpass()` functions.
     inputs: list[str] = field(default_factory=list)
+
+    # The exact expected text output that the student's code should print to the console (stdout).
     expected_print: str | None = None
+
+    # The expected return value of the called function, or a validation function
+    # (accepts the return value and returns True/False based on its correctness).
     expected_return: Any | Callable[[Any], bool] = None
+
+    # The exception class (e.g., ValueError) that must be explicitly raised during the test execution.
     expected_exception: type[Exception] | None = None
+
+    # A dictionary for validating created files. The key is the file path (e.g., 'output.txt'),
+    # and the value is a function checking if the file has the correct content (returns bool).
     file_validators: dict[str, Callable[[str], bool]] = field(default_factory=dict)
+
+    # A function (or a list of functions) to be executed before the test itself
+    # (e.g., preparing test text files, creating directories, etc.).
     setup: Union[Callable[[], None], list[Callable[[], None]], None] = None
+
+    # A function (or a list of functions) to be executed after the test to clean up the environment
+    # (e.g., deleting temporary files). Executes regardless of whether the test passes or fails.
     teardown: Union[Callable[[], None], list[Callable[[], None]], None] = None
+
+    # The maximum allowed execution time of the test in seconds.
+    # Acts as a safeguard against infinite loops in the student's code (e.g., `while True`).
     timeout: float = 2.0
+
+    # The number of consecutive times the tested function should be executed.
+    # Useful for testing randomness or the stability of repeated calls.
     iterations: int = 1
+
+    # A custom validation function for checking the console output.
+    # Used instead of `expected_print` when the output does not need to be an exact match
+    # but must meet certain criteria (e.g., containing a specific word).
     verify_print: Any | Callable[[Any], bool] = None
+
+    # A dictionary to limit the number of calls to specific functions. The key is the path
+    # (e.g., 'builtins.print'), and the value is the maximum allowed number of calls.
     max_calls: dict[str, int] = field(default_factory=dict)
+
+    # A dictionary to enforce the usage of specific functions. The key is the path
+    # (e.g., 'builtins.open'), and the value is the minimum number of times the student must call it.
     required_calls: dict[str, int] = field(default_factory=dict)
+
+    # A set of IDs of previous tests that must pass for this test to be executed.
+    # If any of the prerequisite tests (e.g., 1.0 class existence) fail, this test (e.g., 1.1 initialization)
+    # will be marked as SKIP, preventing a cascading effect of unrelated errors.
     prerequisites: set[tuple[int, ...]] = field(default_factory=set)
 
     @staticmethod
