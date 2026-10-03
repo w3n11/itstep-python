@@ -152,19 +152,13 @@ def run_test(test: tests.TestCase, auto_skip: bool = False) -> TestResult:
 
         timeout_seconds = test.timeout
         start_time = time.time()
-        if callable(test.func):
-            _custom_func = test.func
 
-            def wrapped_func(*args, **kwargs):
-                return _custom_func(assignment, *args, **kwargs)
+        _custom_func = test.func
 
-            target_func = wrapped_func
-        else:
-            target_func = getattr(assignment, str(test.func), None)
+        def wrapped_func(*args, **kwargs):
+            return _custom_func(assignment, *args, **kwargs)
 
-        if target_func is None:
-            log(f"[SKIP] {test_name} (Neimplementováno)", InputColor.SKIP)
-            return TestResult.SKIP
+        target_func = wrapped_func
 
         def tracer(frame, event, arg):
             if time.time() - start_time > timeout_seconds:
