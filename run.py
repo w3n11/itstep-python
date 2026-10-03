@@ -482,10 +482,14 @@ def run_tests():
     if tests_total == tests_passed and tests_total > 0:
         test_cases_bonus: list[tests.TestCase] = tests.generate_bonus(SEED)
         bonus_success: bool = True
+        passed_tests_ids: set[tuple[int, ...]] = set()
         if len(test_cases_bonus) > 0:
             log(divider("BONUSOVÉ TESTY") + "\n", InputColor.INFO)
             for case in test_cases_bonus:
-                if run_test(case) != TestResult.SUCCESS:
+                result = run_test(case, not case.prerequisites.issubset(passed_tests_ids))
+                if result == TestResult.SUCCESS:
+                    passed_tests_ids.add(case.id)
+                else:
                     bonus_success = False
             print()
         else:

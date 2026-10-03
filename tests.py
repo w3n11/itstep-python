@@ -172,6 +172,48 @@ def generate(seed: int | None = None) -> list[TestCase]:
             },
             expected_return=True,
             prerequisites={(2, 3), (2, 4)}
+        ),
+        TestCase(
+            id=(3, 0),
+            name="Metodu collect_fares má pouze Bus, Car nikoliv",
+            func=TestCase.test_class_definition,
+            args=(
+                "Car",
+                (),
+                "collect_fares",
+                False
+            ),
+            expected_return=True
+        ),
+        TestCase(
+            id=(3, 1),
+            name="Bus - výběr jízdného (výchozí cena 20)",
+            func=TestCase.test_class,
+            args=(
+                "Bus", Procedure()
+                .add("collect_fares", expected_return_or_value=0)
+                .add("add_passenger", ("Mrakoplaš",), expected_return_or_value=True)
+                .add("add_passenger", ("Cohen",), expected_return_or_value=True)
+                .add("add_passenger", ("Dvoukvítek",), expected_return_or_value=True)
+                .add("collect_fares", expected_return_or_value=60),
+                ("SOR",)
+            ),
+            expected_return=True,
+            prerequisites={(3, 0)}
+        ),
+        TestCase(
+            id=(3, 2),
+            name="Bus - výběr jízdného s vlastní cenou",
+            func=TestCase.test_class,
+            args=(
+                "Bus", Procedure()
+                .add("add_passenger", ("Mrakoplaš", 0), expected_return_or_value=True)
+                .add("add_passenger", ("Cohen", 39), expected_return_or_value=True)
+                .add("collect_fares", expected_return_or_value=100),
+                ("Karosa", 40, 50)
+            ),
+            expected_return=True,
+            prerequisites={(3, 1)}
         )
     ]
     return result
@@ -179,5 +221,81 @@ def generate(seed: int | None = None) -> list[TestCase]:
 
 def generate_bonus(seed: int | None = None) -> list[TestCase]:
     random.seed(seed)
-    result: list[TestCase] = []
+    result: list[TestCase] = [
+        TestCase(
+            id=(1, 0),
+            name="Bonus - Třída Bus obsahuje metodu board_group",
+            func=TestCase.test_class_definition,
+            args=(
+                "Bus",
+                "board_group",
+                (),
+                True
+            ),
+            expected_return=True
+        ),
+
+        TestCase(
+            id=(1, 1),
+            name="Bonus - Nástup malé skupiny do prázdného autobusu",
+            func=TestCase.test_class,
+            args=(
+                "Bus", Procedure()
+                .add(
+                    "board_group",
+                    ([
+                        NewInstance("Human", ("Bábi Zlopočasná",)),
+                        NewInstance("Human", ("Stařenka Oggová",)),
+                        NewInstance("Dog", ("Greebo",))
+                    ],),
+                    expected_return_or_value=0
+                )
+                .add(
+                    "passengers",
+                    expected_return_or_value=[
+                        NewInstance("Human", ("Bábi Zlopočasná",)),
+                        NewInstance("Human", ("Stařenka Oggová",)),
+                        NewInstance("Dog", ("Greebo",))
+                    ] + [None] * 3
+                ),
+                ("SOR", 6)
+            ),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        ),
+        TestCase(
+            id=(1, 2),
+            name="Bonus - Nástup velké skupiny do poloprázdného minibusu",
+            func=TestCase.test_class,
+            args=(
+                "Bus", Procedure()
+                .add(
+                    "add_passenger",
+                    (NewInstance("Human", ("Řidič",)), 0),
+                    expected_return_or_value=True
+                )
+                .add(
+                    "board_group",
+                    ([
+                        NewInstance("Human", ("Cestující 1",)),
+                        NewInstance("Human", ("Cestující 2",)),
+                        NewInstance("Dog", ("Pes 1",)),
+                        NewInstance("Human", ("Cestující 3",))
+                    ],),
+                    expected_return_or_value=2
+                )
+                .add(
+                    "passengers",
+                    expected_return_or_value=[
+                        NewInstance("Human", ("Řidič",)),
+                        NewInstance("Human", ("Cestující 1",)),
+                        NewInstance("Human", ("Cestující 2",))
+                    ]
+                ),
+                ("Minibus", 3)
+            ),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        )
+    ]
     return result

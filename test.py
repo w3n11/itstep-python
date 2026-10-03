@@ -200,13 +200,20 @@ class TestCase:
                 if callable(target):
                     if not step.args:
                         call_repr += "()"
-                    actual_args = []
-                    for arg in step.args:
-                        if isinstance(arg, NewInstance):
-                            dyn_cl = getattr(assignment, arg.class_name)
-                            actual_args.append(dyn_cl(*arg.args))
-                        else:
-                            actual_args.append(arg)
+
+                    def resolve_arg(arg: Any) -> Any:
+                        if type(arg).__name__ == "NewInstance":
+                            tmp_cl = getattr(assignment, arg.class_name)
+                            return tmp_cl(*[resolve_arg(a) for a in arg.args])
+                        if isinstance(arg, list):
+                            return [resolve_arg(a) for a in arg]
+                        if isinstance(arg, tuple):
+                            return tuple(resolve_arg(a) for a in arg)
+                        if isinstance(arg, dict):
+                            return {k: resolve_arg(v) for k, v in arg.items()}
+                        return arg
+
+                    actual_args = [resolve_arg(a) for a in step.args]
                     result = target(*actual_args)
                 else:
                     result = target
