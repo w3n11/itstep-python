@@ -9,13 +9,106 @@ def generate(seed: int | None = None) -> list[TestCase]:
     result: list[TestCase] = [
         TestCase(
             id=(1, 0),
-            name="Bus - inicializace",
+            name="Passenger - inicializace",
             func=TestCase.test_class_init,
-            args=("Bus", ("SOR",)),
+            args=("Passenger", ("Neznámý",)),
             expected_return=True
         ),
         TestCase(
             id=(1, 1),
+            name="Passenger - textová reprezentace (__str__)",
+            func=TestCase.test_class,
+            args=(
+                "Passenger", Procedure()
+                .add("__str__", expected_return_or_value="Neznámý (Passenger)"),
+                ("Neznámý",)
+            ),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        ),
+        TestCase(
+            id=(1, 2),
+            name="Human - je potomkem Passenger",
+            func=TestCase.test_class_inheritance,
+            args=("Human", "Passenger"),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        ),
+        TestCase(
+            id=(1, 3),
+            name="Dog - je potomkem Passenger",
+            func=TestCase.test_class_inheritance,
+            args=("Dog", "Passenger"),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        ),
+
+        TestCase(
+            id=(2, 0),
+            name="Vehicle - inicializace",
+            func=TestCase.test_class_init,
+            args=("Vehicle", ("Škoda", 5)),
+            expected_return=True,
+            prerequisites={(1, 0)}
+        ),
+
+        TestCase(
+            id=(3, 0),
+            name="Car - je potomkem Vehicle",
+            func=TestCase.test_class_inheritance,
+            args=("Car", "Vehicle"),
+            expected_return=True,
+            prerequisites={(2, 0)}
+        ),
+        TestCase(
+            id=(3, 1),
+            name="Bus - je potomkem Vehicle",
+            func=TestCase.test_class_inheritance,
+            args=("Bus", "Vehicle"),
+            expected_return=True,
+            prerequisites={(2, 0)}
+        ),
+        TestCase(
+            id=(3, 2),
+            name="Car - Deduplikace atributů",
+            func=TestCase.test_class_attr_dedup,
+            args=("Car",),
+            kwargs={"forbidden": ("seats", "passengers", "brand")},
+            expected_return=True,
+            prerequisites={(3, 0)}
+        ),
+        TestCase(
+            id=(3, 3),
+            name="Bus - Deduplikace atributů",
+            func=TestCase.test_class_attr_dedup,
+            args=("Bus",),
+            kwargs={"forbidden": ("seats", "passengers", "brand")},
+            expected_return=True,
+            prerequisites={(3, 1)}
+        ),
+        TestCase(
+            id=(3, 4),
+            name="Car - stále funguje s novými pasažéry",
+            func=TestCase.test_class,
+            args=(
+                "Car", Procedure()
+                .add("add_passenger", (NewInstance("Human", ("Mrakoplaš",)),), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Dog", ("Cohen",)), 0), expected_return_or_value=False)
+                .add("add_passenger", (NewInstance("Human", ("Dvoukvítek",)), 3), expected_return_or_value=True)
+                .add("passengers", expected_return_or_value=[
+                    NewInstance("Human", ("Mrakoplaš",)),
+                    None, None,
+                    NewInstance("Human", ("Dvoukvítek",)),
+                    None
+                ])
+                .add("brand", expected_return_or_value="Mercedes"),
+                ("Mercedes",)
+            ),
+            expected_return=True,
+            prerequisites={(3, 0), (1, 2), (1, 3)}
+        ),
+        TestCase(
+            id=(3, 5),
             name="Bus - výchozí počet míst musí být 40",
             func=TestCase.test_class,
             args=(
@@ -24,10 +117,10 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("SOR",)
             ),
             expected_return=True,
-            prerequisites={(1, 0)}
+            prerequisites={(3, 1)}
         ),
         TestCase(
-            id=(1, 2),
+            id=(3, 6),
             name="Bus - nastavení vlastního počtu míst",
             func=TestCase.test_class,
             args=(
@@ -36,146 +129,32 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 ("SOR", 10)
             ),
             expected_return=True,
-            prerequisites={(1, 0)}
+            prerequisites={(3, 1)}
         ),
         TestCase(
-            id=(2, 0),
-            name="Vehicle - inicializace",
-            func=TestCase.test_class_init,
-            args=(
-                "Vehicle",
-                ("Škoda", 5)
-            ),
-            expected_return=True,
-            prerequisites={(1, 2)}
-        ),
-        TestCase(
-            id=(2, 1),
-            name="Car - je potomkem Vehicle",
-            func=TestCase.test_class_inheritance,
-            args=(
-                "Car", "Vehicle"
-            ),
-            expected_return=True,
-            prerequisites={(2, 0)}
-        ),
-        TestCase(
-            id=(2, 2),
-            name="Car - stále funguje",
-            func=TestCase.test_class,
-            args=(
-                "Car", Procedure()
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Mrakoplaš",)),),
-                    expected_return_or_value=True
-                )
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Cohen",)), 0),
-                    expected_return_or_value=False
-                )
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Dvoukvítek",)), 3),
-                    expected_return_or_value=True
-                )
-                .add(
-                    "passengers",
-                    expected_return_or_value=[
-                        NewInstance("Human", ("Mrakoplaš",)),
-                        None,
-                        None,
-                        NewInstance("Human", ("Dvoukvítek",)),
-                        None
-                    ]
-                )
-                .add(
-                    "brand",
-                    expected_return_or_value="Mercedes"
-                ), ("Mercedes",)
-            ),
-            expected_return=True,
-            prerequisites={(2, 1)}
-        ),
-        TestCase(
-            id=(2, 3),
-            name="Bus - je potomkem Vehicle",
-            func=TestCase.test_class_inheritance,
-            args=(
-                "Bus", "Vehicle"
-            ),
-            expected_return=True,
-            prerequisites={(2, 0)}
-        ),
-        TestCase(
-            id=(2, 4),
-            name="Bus - stále funguje",
+            id=(3, 7),
+            name="Bus - stále funguje s novými pasažéry",
             func=TestCase.test_class,
             args=(
                 "Bus", Procedure()
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Mrakoplaš",)),),
-                    expected_return_or_value=True
-                )
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Cohen",)), 0),
-                    expected_return_or_value=False
-                )
-                .add(
-                    "add_passenger",
-                    (NewInstance("Human", ("Dvoukvítek",)), 3),
-                    expected_return_or_value=True
-                )
-                .add(
-                    "passengers",
-                    expected_return_or_value=[
-                        NewInstance("Human", ("Mrakoplaš",)),
-                        None,
-                        None,
-                        NewInstance("Human", ("Dvoukvítek",)),
-                        None
-                    ] + [None] * 35
-                )
-                .add(
-                    "brand",
-                    expected_return_or_value="Iveco"
-                ), ("Iveco",)
+                .add("add_passenger", (NewInstance("Human", ("Mrakoplaš",)),), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Dog", ("Cohen",)), 0), expected_return_or_value=False)
+                .add("add_passenger", (NewInstance("Human", ("Dvoukvítek",)), 3), expected_return_or_value=True)
+                .add("passengers", expected_return_or_value=[
+                    NewInstance("Human", ("Mrakoplaš",)),
+                    None, None,
+                    NewInstance("Human", ("Dvoukvítek",)),
+                ] + [None] * 36)
+                .add("brand", expected_return_or_value="Iveco"),
+                ("Iveco",)
             ),
             expected_return=True,
-            prerequisites={(2, 1)}
+            prerequisites={(3, 1), (1, 2), (1, 3)}
         ),
+
         TestCase(
-            id=(2, 5),
-            name="Car - Deduplikace atributů",
-            func=TestCase.test_class_attr_dedup,
-            args=(
-                "Car",
-            ),
-            kwargs={
-                "forbidden": ("seats", "passengers", "brand"),
-            },
-            expected_return=True,
-            prerequisites={(2, 1), (2, 2)}
-        ),
-        TestCase(
-            id=(2, 6),
-            name="Bus - Deduplikace atributů",
-            func=TestCase.test_class_attr_dedup,
-            args=(
-                "Bus",
-            ),
-            kwargs={
-                "forbidden": ("seats", "passengers", "brand"),
-            },
-            expected_return=True,
-            prerequisites={(2, 3), (2, 4)}
-        ),
-        TestCase(
-            id=(3, 0),
-            name="Metodu collect_fares má pouze Bus, Car nikoliv",
+            id=(4, 0),
+            name="Car nesmí mít metodu collect_fares",
             func=TestCase.test_class_definition,
             args=(
                 "Car",
@@ -183,37 +162,51 @@ def generate(seed: int | None = None) -> list[TestCase]:
                 "collect_fares",
                 False
             ),
-            expected_return=True
+            expected_return=True,
+            prerequisites={(3, 0)}
         ),
         TestCase(
-            id=(3, 1),
+            id=(4, 1),
+            name="Bus musí mít metodu collect_fares",
+            func=TestCase.test_class_definition,
+            args=(
+                "Bus",
+                "collect_fares",
+                (),
+                False
+            ),
+            expected_return=True,
+            prerequisites={(3, 1)}
+        ),
+        TestCase(
+            id=(4, 2),
             name="Bus - výběr jízdného (výchozí cena 20)",
             func=TestCase.test_class,
             args=(
                 "Bus", Procedure()
                 .add("collect_fares", expected_return_or_value=0)
-                .add("add_passenger", ("Mrakoplaš",), expected_return_or_value=True)
-                .add("add_passenger", ("Cohen",), expected_return_or_value=True)
-                .add("add_passenger", ("Dvoukvítek",), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Human", ("Mrakoplaš",)),), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Dog", ("Cohen",)),), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Human", ("Dvoukvítek",)),), expected_return_or_value=True)
                 .add("collect_fares", expected_return_or_value=60),
                 ("SOR",)
             ),
             expected_return=True,
-            prerequisites={(3, 0)}
+            prerequisites={(4, 1), (3, 7)}
         ),
         TestCase(
-            id=(3, 2),
+            id=(4, 3),
             name="Bus - výběr jízdného s vlastní cenou",
             func=TestCase.test_class,
             args=(
                 "Bus", Procedure()
-                .add("add_passenger", ("Mrakoplaš", 0), expected_return_or_value=True)
-                .add("add_passenger", ("Cohen", 39), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Human", ("Mrakoplaš",)), 0), expected_return_or_value=True)
+                .add("add_passenger", (NewInstance("Human", ("Cohen",)), 39), expected_return_or_value=True)
                 .add("collect_fares", expected_return_or_value=100),
                 ("Karosa", 40, 50)
             ),
             expected_return=True,
-            prerequisites={(3, 1)}
+            prerequisites={(4, 2)}
         )
     ]
     return result
@@ -234,7 +227,6 @@ def generate_bonus(seed: int | None = None) -> list[TestCase]:
             ),
             expected_return=True
         ),
-
         TestCase(
             id=(1, 1),
             name="Bonus - Nástup malé skupiny do prázdného autobusu",
