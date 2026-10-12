@@ -7,7 +7,7 @@ Své řešení pište do souboru `assignment.py`.
 ### 0. Než začneme...
 Při programování už jste se určitě setkali s nějakou **VÝJIMKOU**. Je to způsob, jak programátorovi říct, že se stala v kódu chyba. Ne vždy jsou ale chyby nechtěné. Programátor s nimi může počítat a napsat program tak, aby s chybou počítal a zotavil se z ní.
 
-Každý importovaný modul může definovat vlastní výjimky. Nám budou pro dnešek stačit jen ty z výchozího modulu:
+Každý importovaný modul může definovat vlastní výjimky. Nám budou pro dnešek stačit jen ty z výchozího modulu 
 ```
 BaseException
  ├── BaseExceptionGroup
@@ -25,6 +25,7 @@ BaseException
       ├── EOFError
       ├── ExceptionGroup [BaseExceptionGroup]
       ├── ImportError
+      │    └── ImportCycleError
       │    └── ModuleNotFoundError
       ├── LookupError
       │    ├── IndexError
@@ -51,6 +52,7 @@ BaseException
       ├── ReferenceError
       ├── RuntimeError
       │    ├── NotImplementedError
+      │    ├── PythonFinalizationError
       │    └── RecursionError
       ├── StopAsyncIteration
       ├── StopIteration
@@ -77,63 +79,77 @@ BaseException
            ├── UnicodeWarning
            └── UserWarning
 ```
+> Všimněte si, že zde probíhá **dědičnost**, např. `KeyboardInterrupt` je potomkem `BaseException`, nebo `UserWarning` je potomkem `Warning`, které je potomkem `Exception`, která je potomkem `Exception`.
 
-### I. Kdo vlastně jezdí v autě? (Polymorfismus)
+### I. Když to nejde hacknout, tak to aspoň shodíme...
 
-Zatím naše vozidla vozila jen lidi (`Human`). Co když ale budeme chtít převézt psa? Náš stávající kód je svazující, protože natvrdo vytváří pouze lidi. Pojďme kód upravit tak, aby přijímal kohokoliv, kdo je "Cestující".
+*1.0 - 1.7*\
+Vytvořte třídu `ExceptionRaiser`. Přidejte do ní následující metody (nepotřebují žádné parametry kromě ;`self`). Každá metoda musí svým kódem vyvolat přesně tu výjimku, kterou má v názvu:
 
-**1.0 - 1.1 Třída Passenger**\
-Vytvořte novou třídu `Passenger`. Přesuňte do ní metodu `__init__` (která nastavuje `self.name`) ze stávající třídy `Human`.
-Napište nebo upravte metodu `__str__` tak, aby přesně vracela jméno a v závorce název aktuální třídy:
+* `arithmetic_error(self) -> None` – Zkuste provést nějakou neplatnou matematickou operaci (např. dělení nulou vyvolá `ZeroDivisionError`, což je potomek `ArithmeticError`).
+* `attribute_error(self) -> None` – Zkuste přistoupit k vlastnosti (atributu), kterou daný objekt vůbec nemá.
+* `lookup_error(self) -> None` – Zkuste sáhnout pro data, která neexistují (např. mimo rozsah seznamu nebo na neexistující klíč ve slovníku – obojí vyvolá potomka `LookupError`).
+* `os_error(self) -> None` – Zkuste například otevřít kód ke čtení souboru, který na disku prokazatelně neexistuje.
+* `runtime_error(self) -> None` – Vyvolejte chybu běhu (například nekonečnou rekurzí – funkce bude volat sama sebe, dokud nedojde k vyčerpání paměti).
+* `value_error(self) -> None` – Zkuste převést nevhodný datový typ na jiný (např. string `"number"` na celé číslo `int`).
 
-```python
-def __str__(self) -> str:
-    return self.name + f" ({self.__class__.__name__})"
+> Zatím nepoužívejte klíčové slovo `raise`.
+
+### II. Nejlepší obrana je obrana
+
+*2.0*\
+Vytvořte třídu `Server`, jejíž **konstruktor** (``__init__``) nepříjímá žádný parametr, a která bude mít jediný atribut `self.firewall_enabled` typu `bool` nastavený na `False`. Rovněž implementujte metodu `enable_firewall(self) -> None`, která nastaví tento atribut na hodnotu `True`. Tuto metodu budeme potřebovat později.
+
+*2.1 - 2.8*\
+Náš server bude přijímat data z internetu pomocí metody `receive_payload(self, payload: str) -> str`, kterou teď naimplementujte.
+
+Server však přijme jen ta data, která jsou v pořádku. Pokud `payload` z nějakého důvodu v pořádku není, vyhodíte specifickou výjimku s pomocí `raise Exception()`
+
+**Platný** `payload` vypadá například takto: `0x08DEADDROP`.
+* Zkontrolujte, zda je payload text (`str`). Pokud ne, vyhoďte `TypeError`.
+* Zkontrolujte, zda začíná hlavičkou `"0x"`. Pokud ne, vyhoďte `ValueError`.
+* Další dva znaky payloadu (např. `"08"` z `"0x08DEADDROP"`) určují délku zbytku zprávy. Převeďte je na číslo a zkontrolujte, že zbytek textu je přesně takto dlouhý (délka celého textu musí být `číslo + 4`). Pokud délka nesedí, vyhoďte `ValueError`. (Poznámka: už samotný převod písmen na číslo pomocí `int()` může sám vyhodit `ValueError`, nebraňte mu v tom).
+* Pokud je vše v pořádku, odřízněte první 4 znaky a vraťte čistou zprávu.
+
+*3.0 - 3.9*\
+Vestavěné chyby nám nestačí pro bezpečnostní logování.
+
+Vytvořte si vlastní třídu výjimky jménem `SecurityError`, která bude dědit z `Exception` (tělo nechte prázdné).
+
+Pomocí bloku TRY-EXCEPT, je-li zapnutý firewall, zajistěte, aby při chybě metoda `receive_payload` vyhodila `SecurityError`.
+```py
+try:
+    # kód, v němž se může stát chyba
+except ValueError:
+    # pokud nastane ValueError, skočí se sem, jako by se blok TRY
+    # vůbec nevykonal (kromě interakcí s externími zdroji)
+except Exception as e:
+    # pokud nastane jiná výjimka, můžeme ji odchytit takto a uložit
+    # do proměnné e a dále s ní pracovat
+finally:
+    # tento kus kódu se vykoná vždy, ať výjimka nastane, nebo ne
 ```
 
-**1.2 - 1.3 Human a Dog**\
-Upravte třídu Human tak, aby dědila z Passenger. Smažte z ní všechny metody (tělo třídy bude obsahovat jen klíčové slovo pass).
-Vytvořte novou třídu Dog, která bude také dědit z Passenger a bude rovněž prázdná.
+> NIKDY nepoužívejte holé `except`. Pak ošetříte i to, co nechcete, a váš kód nebude fungovat správně, a vy o tom nebudete mít ani ponětí.
 
-### II. Nejsou ta vozidla nakonec stejná? (Nadtřída Vehicle)
+Toho dosáhnete tím, že:
 
-Abychom mohli otestovat funkčnost aut i autobusů, potřebujeme mít společný základ.
+1. celý kód v metodě `receive_payload` obalíte do bloku `try`.
+2. k němu přidáte `except Exception as e:`, který zachytí jakoukoli chybu, ať už vyvolanou vámi nebo kódem implicitně.
+3. Uvnitř bloku `except` zkontrolujete, jestli je zapnutý firewall. Pokud ano, vyhodíte `SecurityError`. Pokud ne, vyhodíte tu chybu, kterou byste vyhodili bez zapnutého firewallu.
 
-**2.0 Nadtřída Vehicle**\
-Vytvořte obecnou rodičovskou třídu `Vehicle`. Zkopírujte do její metody `__init__` veškerou inicializaci atributů `brand`, `seats` a vytváření pole `passengers`. Třída `Vehicle` nemá žádné výchozí počty míst (počet jí musí být vždy explicitně předán).
-Přesuňte do ní také metodu `__str__` a `add_passenger`.
+## BONUS: Bezpečné odpojení (Blok Finally)
 
-**Chytřejší `add_passenger`**
+V bloku `try-except` existuje ještě třetí, velmi mocné slovo: `finally`. Kód uvnitř `finally` se provede **VŽDY**, bez ohledu na to, zda v bloku `try` nastala chyba, nebo kód doběhl úspěšně. Slouží k takzvanému "úklidu" – například k uzavření souboru, uvolnění paměti nebo odpojení od sítě. Hacker nesmí nechat otevřená zadní vrátka, když jeho útok selže, a server naopak nesmí nechat viset spojení, když spadne!
 
-Místo aby metoda v parametrech přijímala `passenger_name: str` a sama si z něj vytvářela objekt, bude nově přijímat už hotový objekt typu `Passenger`.
+*4.0 - 4.1*\
+Upravte konstruktor (`__init__`) vaší třídy `Server` a přidejte mu nový atribut `self.is_connected = False`.
 
-Upravte kód uvnitř (už nebudete volat `Human(...)`, ale uložíte přímo přijatý objekt) a upravte datové typy u pole passengers na `list[Passenger | None]`.
-
-### III. Dědičnost a deduplikace (Car a Bus)
-
-**3.0 - 3.1 Dědičnost**\
-Upravte třídu `Car` tak, aby dědila ze třídy `Vehicle`.
-Vytvořte novou třídu `Bus`, která bude také dědit ze třídy `Vehicle`. Třída `Bus` bude mít výchozí počet míst (`seats`) nastavený na `40`.
-
-**3.2 - 3.7 Deduplikace kódu a funkčnost**\
-V metodách `__init__` tříd `Car` a `Bus` využijte volání rodičovského konstruktoru pomocí funkce `super()`. Odstraňte u potomků zbytečné vytváření atributů (`self.brand = ...` atd.), které už zařizuje rodič.\
-Auto i autobus si samozřejmě stále musí zachovat své výchozí počty míst v parametrech svého `__init__`.
-
-> Vaše auto i autobus by po těchto krocích měly normálně fungovat a usazovat nové objekty pasažérů.
-
-### IV. Co umí autobus navíc? (Rozšiřování potomků)
-
-Dědičnost neslouží jen ke sdílení stejného kódu, ale i k tomu, aby se potomci mohli lišit. Autobusy (na rozdíl od aut) vybírají od cestujících peníze.
-
-**Lístky na autobus**\
-Přidejte třídě `Bus` do `__init__` nový volitelný parametr `ticket_price: int = 20`. Vytvořte z něj nový atribut třídy.
-
-**4.0 - 4.3 Výběr jízdného**\
-Vytvořte pouze pro třídu `Bus` novou metodu `collect_fares(self) -> int`. Metoda projde všechny aktuálně sedící pasažéry v autobuse (pozor na prázdná místa `None`) a vrátí celkovou částku, kterou autobus vybral na jízdném.
-
-## BONUS
-
-Přidejte do autobusu metodu `board_group(self, group: list[Passenger]) -> int`, která přijme seznam čekajících pasažérů. Metoda se pokusí posadit co nejvíce z nich na první volná sedadla v autobuse. Metoda vrátí číslo udávající, kolik pasažérů se do autobusu nevešlo (kapacita byla vyčerpána). Pokud si sedli všichni, vrátí `0`.
+Napište do třídy `Server` novou metodu `execute_command(self, command: str) -> None`. V této metodě udělejte následující:
+1. Nastavte `self.is_connected = True` (simulace otevření citlivého spojení do databáze).
+2. Otevřete blok `try`. Pokud je příkaz (`command`) roven slovu `"CRASH"`, simulujte fatální selhání serveru tím, že vyhodíte `SystemError()`.
+3. Nepoužívejte `except` (nechceme chybu chytat, chceme, aby systém opravdu spadl a chyba proletěla ven, aby si jí všiml administrátor). 
+4. Namísto toho přidejte blok `finally`, ve kterém **vždy** (ať už systém spadl, nebo příkaz proběhl v pořádku) nastavíte `self.is_connected = False`, abyste bezpečně ukončili spojení.
 
 ---
 

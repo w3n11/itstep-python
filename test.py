@@ -81,7 +81,7 @@ class TestCase:
     expected_return: Any | Callable[[Any], bool] = None
 
     # The exception class (e.g., ValueError) that must be explicitly raised during the test execution.
-    expected_exception: type[Exception] | None = None
+    expected_exception: type[Exception] | NewInstance | None = None
 
     # A dictionary for validating created files. The key is the file path (e.g., 'output.txt'),
     # and the value is a function checking if the file has the correct content (returns bool).
@@ -283,14 +283,20 @@ class TestCase:
 
     @staticmethod
     def test_class_inheritance(assignment, child_class: str, parent_class: str) -> bool:
+        import builtins
+
         try:
             child = getattr(assignment, child_class)
         except AttributeError:
             raise AssertionError(f"Třída '{child_class}' nebyla nalezena.")
 
-        try:
+        parent = None
+        if hasattr(assignment, parent_class):
             parent = getattr(assignment, parent_class)
-        except AttributeError:
+        elif hasattr(builtins, parent_class):
+            parent = getattr(builtins, parent_class)
+
+        if parent is None:
             raise AssertionError(f"Rodičovská třída '{parent_class}' nebyla nalezena.")
 
         if not issubclass(child, parent):
@@ -354,7 +360,7 @@ class TestCase:
                 if forb in cl.__dict__:
                     raise AssertionError(
                         f"Kód není deduplikován! Třída '{class_name}' nesmí mít přímo v sobě definováno '{forb}'. "
-                        "Smažte to a nechte třídu, ať metodu dědí z rodiče."
+                        "Vymaž to a nechte třídu, ať metodu dědí z rodiče."
                     )
             else:
                 if hasattr(cl, forb):
@@ -420,10 +426,10 @@ class TestCase:
         for node in ast.walk(tree):
             if isinstance(node, ast.Raise):
                 if not invert_return:
-                    codespace: str = f"ve funkci/třídě '{target_name}'" if target_name else "ve tvém kódu"
+                    # codespace: str = f"ve funkci/třídě '{target_name}'" if target_name else "ve tvém kódu"
                     raise AssertionError(
                         f"Na řádku {node.lineno} bylo nalezeno klíčové slovo 'raise'. "
-                        f"Jeho použití není {codespace} povoleno."
+                        # f"Jeho použití není {codespace} povoleno."
                     )
                 else:
                     return True

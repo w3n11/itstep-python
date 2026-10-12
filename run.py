@@ -261,14 +261,26 @@ def run_test(test: tests.TestCase, auto_skip: bool = False) -> TestResult:
             caught_exception = e
 
         if test.expected_exception is not None:
+            expected_obj: Any = test.expected_exception
+            exc_class: Any
+            exc_name: str
+
+            if type(expected_obj).__name__ == "NewInstance":
+                exc_name = expected_obj.class_name
+                exc_class = getattr(assignment, exc_name)
+            else:
+                exc_class = expected_obj
+                exc_name = expected_obj.__name__
+
             if caught_exception is None:
                 log(f"[FAIL] {test_name} (Byla očekávána výjimka)", InputColor.ERROR)
-                log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
+                log(f"       Očekáváno: {exc_name}", InputColor.WARNING)
                 log(f"       Obdrženo:  {actual_return}", InputColor.WARNING)
                 return TestResult.FAIL
-            elif not isinstance(caught_exception, test.expected_exception):
+
+            elif not isinstance(caught_exception, exc_class):
                 log(f"[FAIL] {test_name} (Byla očekávána jiná výjimka)", InputColor.ERROR)
-                log(f"       Očekáváno: {test.expected_exception.__name__}", InputColor.WARNING)
+                log(f"       Očekáváno: {exc_name}", InputColor.WARNING)
                 log(f"       Obdrženo:  {type(caught_exception).__name__}: {caught_exception}", InputColor.WARNING)
                 return TestResult.ERROR
             else:
