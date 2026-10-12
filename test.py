@@ -170,6 +170,10 @@ class TestCase:
                 return repr(val)
             return str(val)
 
+        def get_fancy_trace(trace) -> str:
+            indent: int = 7
+            return f"\n\n{indent * ' '}Postup:\n{indent * ' '}" + f"\n{indent * ' '}".join(trace) + "\n"
+
         args_str = ", ".join(nice_format(a) for a in init_args)
         trace = [f"x = {class_name}({args_str})"]
 
@@ -178,7 +182,7 @@ class TestCase:
             instance = cl(*init_args)
         except Exception as e:
             raise AssertionError(
-                f"Selhala inicializace {type(e).__name__}: {e}\n\nPostup:\n" + "\n".join(trace) + "\n"
+                f"Selhala inicializace {type(e).__name__}: {e}{get_fancy_trace(trace)}"
             )
 
         for step in procedure:
@@ -191,7 +195,7 @@ class TestCase:
             if not hasattr(instance, step.attribute_or_method):
                 trace.append(call_repr)
                 raise AssertionError(
-                    f"Objekt nemá atribut/metodu '{step.attribute_or_method}'\n\nPostup:\n" + "\n".join(trace) + "\n"
+                    f"Objekt nemá atribut/metodu '{step.attribute_or_method}'{get_fancy_trace(trace)}"
                 )
 
             target = getattr(instance, step.attribute_or_method)
@@ -213,15 +217,18 @@ class TestCase:
                             return {k: resolve_arg(v) for k, v in arg.items()}
                         return arg
 
-                    actual_args = [resolve_arg(a) for a in step.args]
+                    actual_args: list[Any] = [resolve_arg(a) for a in step.args]
                     result = target(*actual_args)
                 else:
                     result = target
             except Exception as e:
                 trace.append(call_repr)
-                raise AssertionError(
-                    f"Při volání nastala výjimka {type(e).__name__}: {e}\n\nPostup:\n" + "\n".join(trace) + "\n"
-                )
+                exception_text: str = get_fancy_trace(trace)
+                if e.args:
+                    e.args = tuple([f"{str(e.args[0])}{exception_text}"] + list(e.args[1:]))
+                else:
+                    e.args = (exception_text,)
+                raise e
 
             if not step.ignore:
                 call_repr += f" == {nice_format(step.expected_return_or_value)}"
@@ -232,7 +239,7 @@ class TestCase:
                 if not TestCase.compare_values(assignment, result, step.expected_return_or_value):
                     raise AssertionError(
                         f"Očekáváno: {nice_format(step.expected_return_or_value)}\n"
-                        f"Obdrženo:  {nice_format(result)}\n\nPostup:\n" + "\n".join(trace) + "\n"
+                        f"Obdrženo:  {nice_format(result)}{get_fancy_trace(trace)}"
                     )
         return True
 
@@ -266,7 +273,13 @@ class TestCase:
         except Exception as e:
             args_repr = [repr(a) for a in actual_args] + [f"{k}={repr(v)}" for k, v in actual_kwargs.items()]
             call_str = f"{func_name}({', '.join(args_repr)})"
-            raise AssertionError(f"Při volání {call_str} nastala výjimka {type(e).__name__}: {e}")
+            exception_text: str = f"\n\n       Postup:\n       Volání: {call_str}"
+
+            if e.args:
+                e.args = tuple([f"{str(e.args[0])}{exception_text}"] + list(e.args[1:]))
+            else:
+                e.args = (exception_text,)
+            raise e
 
     @staticmethod
     def test_class_inheritance(assignment, child_class: str, parent_class: str) -> bool:
@@ -371,3 +384,50 @@ class TestCase:
             return all(TestCase.compare_values(assignment, a, e) for a, e in zip(actual, expected))
 
         return actual == expected
+
+    @staticmethod
+    def test_forbidden_raise(assignment, target_name: str | None = None, invert_return: bool = False) -> bool:
+        """
+        Returns `True` if the function/class/file does **NOT** contain `raise` keyword.\n
+        If `target_name` is `None`, it searches the whole file.
+        If `target_name` is set, it searches only inside the `target_name` (either function or class).\n
+        If `invert_return` is `True`, it returns `not result` instead of `result`.
+        """
+        import ast
+        import inspect
+        import textwrap
+
+        try:
+            if target_name:
+                if not hasattr(assignment, target_name):
+                    raise AssertionError(f"Funkce/Třída '{target_name}' nebyla nalezena a nelze ji zkontrolovat.")
+                target = getattr(assignment, target_name)
+                source = inspect.getsource(target)
+                source = textwrap.dedent(source)
+            else:
+                with open(assignment.__file__, "r", encoding="utf-8") as f:
+                    source = f.read()
+        except Exception as e:
+            raise AssertionError(f"Nepodařilo se načíst zdrojový kód pro analýzu: {e}")
+
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            # It should not reach here, because this is taken care of in run.py
+            # but just in case...
+            raise AssertionError("Kód obsahuje syntaktickou chybu, nelze jej zanalyzovat.")
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Raise):
+                if not invert_return:
+                    codespace: str = f"ve funkci/třídě '{target_name}'" if target_name else "ve tvém kódu"
+                    raise AssertionError(
+                        f"Na řádku {node.lineno} bylo nalezeno klíčové slovo 'raise'. "
+                        f"Jeho použití není {codespace} povoleno."
+                    )
+                else:
+                    return True
+        if invert_return:
+            codespace: str = f"Ve funkci/třídě '{target_name}'" if target_name else "Ve tvém kódu"
+            raise AssertionError(f"{codespace} chybí klíčové slovo 'raise', které je zde vyžadováno.")
+        return True
