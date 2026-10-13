@@ -2,7 +2,13 @@
   "flake8.args": [
     "--max-line-length=120"
   ],
-  "todo-tree.tree.showBadges": true,
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
-  "python.terminal.activateEnvironment": true
+  "python.defaultInterpreterPath": "python",
+  "python.terminal.activateEnvironment": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "files.readonlyInclude": {
+    "run.py": true,
+    "test.py": true,
+    "tests.py": true
+  }
 }

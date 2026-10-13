@@ -5,21 +5,33 @@
       "label": "Automated Environment Setup",
       "type": "shell",
       "windows": {
-        "command": "if (-not (Test-Path '.venv')) { py -m venv .venv -ErrorAction SilentlyContinue; if (-not $?) { python -m venv .venv } }; .\\.venv\\Scripts\\pip install -r requirements.txt"
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-Command"
+            ]
+          }
+        },
+        "command": "$py = if (Get-Command py -ErrorAction SilentlyContinue) { 'py' } elseif (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { $null }; if (-not $py) { Write-Host 'CHYBA: Python není nainstalován, nebo při instalaci nebylo zaškrtnuto Add Python to PATH.' -ForegroundColor Red; exit 1 }; if (-not (Test-Path '.venv')) { & $py -m venv .venv }; if (Test-Path 'requirements.txt') { & '.\\.venv\\Scripts\\pip.exe' install -r requirements.txt; if ($LASTEXITCODE -ne 0) { Write-Host 'CHYBA: Nepodařilo se stáhnout balíčky. Zkontrolujte připojení k internetu nebo nastavení firewallu.' -ForegroundColor Red; exit 1 } }"
       },
       "osx": {
-        "command": "python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt"
+        "command": "if [ ! -d '.venv' ]; then python3 -m venv .venv; fi; if [ -f 'requirements.txt' ]; then ./.venv/bin/pip install -r requirements.txt; fi"
       },
       "linux": {
-        "command": "python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt"
+        "command": "if [ ! -d '.venv' ]; then python3 -m venv .venv; fi; if [ -f 'requirements.txt' ]; then ./.venv/bin/pip install -r requirements.txt; fi"
       },
       "problemMatcher": [],
       "runOptions": {
         "runOn": "folderOpen"
       },
       "presentation": {
-        "reveal": "always",
-        "panel": "shared"
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
       }
     }
   ]
