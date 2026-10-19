@@ -103,7 +103,7 @@ def prerequisite_forbidden_modules(file: str) -> tuple[bool, str]:
         "time"
     }
     extra: set[str] = {
-        "turtle", "getpass", "difflib"
+        "os", "database"
     }  # type: ignore
     allowed_modules = default_allowed_modules.union(extra)
 

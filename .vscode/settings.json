@@ -7,8 +7,9 @@
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
   "files.readonlyInclude": {
-    "run.py": false,
-    "test.py": false,
-    "tests.py": false
+    "run.py": true,
+    "test.py": true,
+    "tests.py": true,
+    "database.py": true
   }
 }

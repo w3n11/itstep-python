@@ -1,336 +1,260 @@
-import random  # noqa: F401
-from typing import Any  # noqa: F401
-from test import TestCase, Procedure, NewInstance  # noqa: F401 # type: ignore
+import os
+import random
+from test import TestCase, Procedure, NewInstance  # type: ignore
+
+TEST_DB = "test_accounts.txt"
 
 
-# --- HELPER FUNCTIONS START ---
+def setup_db():
+    """Vytvoří dočasnou databázi pro testy, aby nebyly závislé na produkčním souboru."""
+    with open(TEST_DB, "w", encoding="utf-8") as f:
+        f.write("1111/1234,Novak,Jan,jan@banka.cz,TajneHeslo1,5000,CZK\n")
+        f.write("2222/1234,Svobodova,Eva,eva@banka.cz,TajneHeslo2,10000,CZK\n")
 
-def verify_finally_cleanup(assignment) -> bool:
+
+def teardown_db():
+    """Uklidí dočasnou databázi po dokončení testu."""
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+
+
+def test_db_loading(assignment) -> bool:
     try:
-        sys_obj = assignment.Server()
-    except AttributeError:
-        raise AssertionError("Třída 'Server' nebyla nalezena.")
+        bank = assignment.Bank(filepath=TEST_DB)
+        if len(bank.accounts) != 2:
+            raise AssertionError("Banka nenačetla správný počet účtů.")
+        return True
+    except assignment.DatabaseNotFound:
+        raise AssertionError("Banka vyhodila DatabaseNotFound..")
 
-    class SpyStr(str):
-        def __eq__(self, other):
-            if getattr(sys_obj, "is_connected", False) is not True:
-                raise AssertionError("Chyba: 'is_connected' zůstalo na False. (Server se nepřipojil.)")
-            return str(self) == other
 
-    try:
-        sys_obj.execute_command(SpyStr("CRASH"))
-    except SystemError:
-        pass
-    except AssertionError as e:
-        raise e
-    except Exception as e:
-        raise AssertionError(f"Očekáván SystemError při příkazu 'CRASH', ale vyletěl {type(e).__name__}")
-
-    if getattr(sys_obj, "is_connected", True):
-        raise AssertionError("Spojení zůstalo otevřené. Blok 'finally' úklid po chybě neprovedl.")
-
-    try:
-        sys_obj.execute_command(SpyStr("PING"))
-    except AssertionError as e:
-        raise e
-    except Exception as e:
-        raise AssertionError(f"Při jiném příkazu (např. 'PING') server padat neměl, ale vyletěl {type(e).__name__}")
-
-    if getattr(sys_obj, "is_connected", True):
-        raise AssertionError("Spojení zůstalo otevřené. Blok 'finally' musí spojení uzavřít vždy.")
-
+def test_successful_login(assignment) -> bool:
+    bank = assignment.Bank(filepath=TEST_DB)
+    acc = bank.login()
+    if acc is None:
+        raise AssertionError("Při zadání správného hesla metoda nevrátila účet, ale None.")
+    if acc.login_email != "jan@banka.cz":
+        raise AssertionError(f"Očekáván účet pro jan@banka.cz, ale vrácen {acc.login_email}.")
     return True
 
-# --- HELPER FUNCTIONS END ---
+
+def test_payment_negative_amount(assignment) -> bool:
+    bank = assignment.Bank(filepath=TEST_DB)
+    acc = [a for a in bank.accounts if a.account_number == "1111/1234"][0]
+    bank.process_payment(acc)
+
+    if acc.balance != 5000:
+        raise AssertionError("Při zadání záporné částky se změnil zůstatek.")
+    return True
+
+
+def test_payment_overdraft(assignment) -> bool:
+    bank = assignment.Bank(filepath=TEST_DB)
+    acc = [a for a in bank.accounts if a.account_number == "1111/1234"][0]
+    bank.process_payment(acc)
+
+    if acc.balance != 5000:
+        raise AssertionError("Uživatel úspěšně odeslal více peněz, než měl na účtu.")
+    return True
+
+
+def test_payment_valid_and_operator(assignment) -> bool:
+    bank = assignment.Bank(filepath=TEST_DB)
+    sender = [a for a in bank.accounts if a.account_number == "1111/1234"][0]
+    receiver = [a for a in bank.accounts if a.account_number == "2222/1234"][0]
+
+    bank.process_payment(sender)
+
+    if sender.balance == 5000 and receiver.balance == 10000:
+        raise AssertionError("Platba se vůbec neprovedla, zůstatky se nezměnily.")
+    if sender.balance == 3000 and receiver.balance == 8000:
+        raise AssertionError("Cílovému účtu se peníze odečetly místo přičtení.")
+    if sender.balance != 3000 or receiver.balance != 12000:
+        raise AssertionError("Zůstatky po platbě nesedí s očekávaným výpočtem.")
+    return True
+
+
+def test_payment_to_self(assignment) -> bool:
+    bank = assignment.Bank(filepath=TEST_DB)
+    acc = [a for a in bank.accounts if a.account_number == "1111/1234"][0]
+    bank.process_payment(acc)
+
+    if acc.balance != 5000:
+        raise AssertionError("Zůstatek se změnil, ačkoliv uživatel posílal peníze sám sobě.")
+    return True
+
+
+def validate_db_saved(filepath: str) -> bool:
+    with open(filepath, "r", encoding="utf-8") as f:
+        content = f.read()
+    return "jan@banka.cz,TajneHeslo1,3000,CZK" in content and "eva@banka.cz,TajneHeslo2,12000,CZK" in content
+
+
+def test_bonus_integrity(assignment) -> bool:
+    try:
+        bank = assignment.Bank(filepath=TEST_DB)
+    except Exception:
+        raise AssertionError("Banka se nenačetla.")
+
+    if not hasattr(bank, "check_integrity"):
+        raise AssertionError("Bance chybí metoda 'check_integrity()'.")
+
+    if not bank.check_integrity():
+        raise AssertionError("check_integrity() vrací False, i když se nic nestalo.")
+
+    hacker = bank.accounts[0]
+    hacker.balance += 100_000
+
+    if bank.check_integrity():
+        raise AssertionError("Metoda neodhalila, že si uživatel přidal peníze.")
+
+    return True
 
 
 def generate(seed: int | None = None) -> list[TestCase]:
     random.seed(seed)
 
     result: list[TestCase] = [
+        # --- 1. BASE FUNCTIONALITY ---
         TestCase(
             id=(1, 0),
-            name="ExceptionRaiser existuje",
+            name="Třída Account se správně inicializuje",
             func=TestCase.test_class_init,
-            args=(
-                "ExceptionRaiser", tuple()
-            ),
+            args=("Account", ("1111", "Jan", "Novak", "jan@mail.cz", "heslo", "1500", "CZK")),
             expected_return=True
         ),
-    ]
-
-    exceptions_tested: dict[str, Any] = {
-        "arithmetic_error": ArithmeticError,
-        "attribute_error": AttributeError,
-        # "import_error": ImportError,
-        "lookup_error": LookupError,
-        "os_error": OSError,
-        "runtime_error": RuntimeError,
-        "value_error": ValueError
-    }
-    for i, key in enumerate(exceptions_tested.keys(), start=1):
-        result.append(
-            TestCase(
-                id=(1, i),
-                name=f"ExceptionRaiser.{key}",
-                func=TestCase.test_class,
-                args=(
-                    "ExceptionRaiser", Procedure()
-                    .add(key),
-                    tuple()
-                ),
-                expected_exception=exceptions_tested[key],  # type: ignore
-                prerequisites={(1, 0)}
-            )
-        )
-    result.extend([
         TestCase(
-            id=(1, len(exceptions_tested) + 1),
-            name="ExceptionRaiser nesmí použít 'raise'",
-            func=TestCase.test_forbidden_raise,
-            args=(
-                "ExceptionRaiser",
-            ),
-            expected_return=True,
-            prerequisites={(1, len(exceptions_tested))}
+            id=(1, 1),
+            name="Třída Bank a základní kostra existuje",
+            func=TestCase.test_class_existence,
+            args=("Bank",),
+            expected_return=True
         ),
         TestCase(
-            id=(2, 0),
-            name="Server",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("firewall_enabled", expected_return_or_value=False)
-                .add("enable_firewall", expected_return_or_value=None)
-                .add("firewall_enabled", expected_return_or_value=True),
-                tuple()
-            ),
+            id=(1, 2),
+            name="Načítání databáze z parametru konstruktoru",
+            func=test_db_loading,
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
-            prerequisites={(1, len(exceptions_tested) + 1)}
+            prerequisites={(1, 1)}
+        ),
+
+        # --- 2. LOGIN ---
+        TestCase(
+            id=(2, 0),
+            name="Úspěšné přihlášení správným heslem vrací objekt Account",
+            func=test_successful_login,
+            inputs=["jan@banka.cz", "TajneHeslo1"],
+            setup=setup_db,
+            teardown=teardown_db,
+            verify_print=lambda _: True,
+            expected_return=True,
+            prerequisites={(1, 2)}
         ),
         TestCase(
             id=(2, 1),
-            name="receive_payload('0x08DEADDROP')",
+            name="Neexistující email vrací z loginu None",
             func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("0x08DEADDROP",), expected_return_or_value="DEADDROP"),
-            ),
+            args=("Bank", Procedure().add("login", expected_return_or_value=None), (TEST_DB,)),
+            inputs=["neexistuje@banka.cz"],
+            setup=setup_db,
+            teardown=teardown_db,
+            verify_print=lambda _: True,
             expected_return=True,
-            prerequisites={(2, 0)}
+            prerequisites={(1, 2)}
         ),
         TestCase(
             id=(2, 2),
-            name="receive_payload('Ox08DEADDROP')",
+            name="Zablokování účtu po 3 špatných heslech",
             func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("Ox08DEADDROP",), ignore=True),
-            ),
-            expected_exception=ValueError,
-            prerequisites={(2, 1)}
+            args=("Bank", Procedure().add("login", ignore=True), (TEST_DB,)),
+            inputs=["jan@banka.cz", "spatne1", "spatne2", "spatne3"],
+            expected_exception=NewInstance("SuspiciousLoginAttempt"),
+            setup=setup_db,
+            teardown=teardown_db,
+            verify_print=lambda _: True,
+            prerequisites={(1, 2)}
         ),
-        TestCase(
-            id=(2, 3),
-            name="receive_payload('08DEADDROP')",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("08DEADDROP",), ignore=True),
-            ),
-            expected_exception=ValueError,
-            prerequisites={(2, 2)}
-        ),
-        TestCase(
-            id=(2, 4),
-            name="receive_payload('0x04PINKY')",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("0x04PINKY",), ignore=True),
-            ),
-            expected_exception=ValueError,
-            prerequisites={(2, 3)}
-        ),
-        TestCase(
-            id=(2, 5),
-            name="receive_payload('0x04PINKY')",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("0x06LEVEL",), ignore=True),
-            ),
-            expected_exception=ValueError,
-            prerequisites={(2, 4)}
-        ),
-        TestCase(
-            id=(2, 6),
-            name="receive_payload('0x00')",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=("0x00",), expected_return_or_value=""),
-            ),
-            expected_return=True,
-            prerequisites={(2, 5)}
-        ),
-        TestCase(
-            id=(2, 7),
-            name="receive_payload(0x01)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=(0x01,), ignore=True),
-            ),
-            expected_exception=TypeError,
-            prerequisites={(2, 6)}
-        ),
-        TestCase(
-            id=(2, 8),
-            name="receive_payload(123456789)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("receive_payload", args=(123456789,), ignore=True),
-            ),
-            expected_exception=TypeError,
-            prerequisites={(2, 7)}
-        ),
+
+        # --- 3. PAYMENTS ---
         TestCase(
             id=(3, 0),
-            name="SecurityError existuje",
-            func=TestCase.test_class_init,
-            args=(
-                "SecurityError", tuple()
-            ),
+            name="Úspěšná platba upraví zůstatky objektů",
+            func=test_payment_valid_and_operator,
+            inputs=["2222/1234", "2000"],
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
-            prerequisites={(2, 8)}
+            verify_print=lambda _: True,
+            prerequisites={(2, 0)}
         ),
         TestCase(
             id=(3, 1),
-            name="SecurityError dědí z Exception",
-            func=TestCase.test_class_inheritance,
-            args=(
-                "SecurityError", "Exception"
-            ),
+            name="Úspěšná platba se uloží zpět do souboru",
+            func=test_payment_valid_and_operator,
+            inputs=["2222/1234", "2000"],
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
+            verify_print=lambda _: True,
+            file_validators={TEST_DB: validate_db_saved},
             prerequisites={(3, 0)}
         ),
         TestCase(
             id=(3, 2),
-            name="receive_payload('0x08DEADDROP') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("0x08DEADDROP",), expected_return_or_value="DEADDROP"),
-            ),
+            name="Zákaz zasílání peněz sobě samému",
+            func=test_payment_to_self,
+            inputs=["1111/1234", "1000"],
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
-            prerequisites={(3, 1)}
+            verify_print=lambda _: True,
+            prerequisites={(2, 0)}
         ),
         TestCase(
             id=(3, 3),
-            name="receive_payload('Ox08DEADDROP') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("Ox08DEADDROP",), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 2)}
+            name="Zákaz záporných částek při platbě",
+            func=test_payment_negative_amount,
+            inputs=["2222/1234", "-5000"],
+            setup=setup_db,
+            teardown=teardown_db,
+            expected_return=True,
+            verify_print=lambda _: True,
+            prerequisites={(2, 0)}
         ),
         TestCase(
             id=(3, 4),
-            name="receive_payload('08DEADDROP') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("08DEADDROP",), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 3)}
-        ),
-        TestCase(
-            id=(3, 5),
-            name="receive_payload('0x04PINKY') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("0x04PINKY",), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 4)}
-        ),
-        TestCase(
-            id=(3, 6),
-            name="receive_payload('0x04PINKY') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("0x06LEVEL",), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 5)}
-        ),
-        TestCase(
-            id=(3, 7),
-            name="receive_payload('0x00') (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=("0x00",), expected_return_or_value=""),
-            ),
+            name="Ochrana proti přečerpání účtu",
+            func=test_payment_overdraft,
+            inputs=["2222/1234", "9999999"],
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
-            prerequisites={(3, 6)}
-        ),
-        TestCase(
-            id=(3, 8),
-            name="receive_payload(0x01) (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=(0x01,), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 7)}
-        ),
-        TestCase(
-            id=(3, 9),
-            name="receive_payload(123456789) (zapnutý firewall)",
-            func=TestCase.test_class,
-            args=(
-                "Server", Procedure()
-                .add("enable_firewall")
-                .add("receive_payload", args=(123456789,), ignore=True),
-            ),
-            expected_exception=NewInstance("SecurityError"),
-            prerequisites={(3, 8)}
+            verify_print=lambda _: True,
+            prerequisites={(2, 0)}
         )
-    ])
-
+    ]
     return result
 
 
 def generate_bonus(seed: int | None = None) -> list[TestCase]:
     random.seed(seed)
+
     result: list[TestCase] = [
         TestCase(
             id=(4, 0),
-            name="Bonus: Server.execute_command() existuje",
+            name="Třída Bank má bezpečnostní metodu check_integrity",
             func=TestCase.test_class_definition,
-            args=("Server", "execute_command", (), False),
+            args=("Bank", "check_integrity", (), False),
             expected_return=True
         ),
         TestCase(
             id=(4, 1),
-            name="Bonus: Spojení se pomocí 'finally' bezpečně uzavře za všech okolností",
-            func=verify_finally_cleanup,
+            name="Odhalení podvodu pomocí kontrolního součtu všech peněz",
+            func=test_bonus_integrity,
+            setup=setup_db,
+            teardown=teardown_db,
             expected_return=True,
             prerequisites={(4, 0)}
         )
