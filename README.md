@@ -1,4 +1,4 @@
-# Python Advanced - Lekce 03: Výjimky a ošetření chyb
+# Python Advanced - Lekce 04: Oprava kódu
 
 ## Zadání úloh
 
